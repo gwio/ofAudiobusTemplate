@@ -23,6 +23,7 @@ class ofApp : public ofxiOSApp {
         void gotMemoryWarning();
         void deviceOrientationChanged(int newOrientation);
     
+    void setupAudioStream();
     
     ABiOSSoundStream* stream;
     ABiOSSoundStream* getSoundStream();

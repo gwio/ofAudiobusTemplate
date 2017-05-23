@@ -18,9 +18,9 @@
 ABiOSSoundStream::ABiOSSoundStream() {
     soundInputStream = NULL;
     soundOutputStream = NULL;
-
-	soundInputPtr = NULL;
-	soundOutputPtr = NULL;
+    
+    soundInputPtr = NULL;
+    soundOutputPtr = NULL;
     
     numOfInChannels = 0;
     numOfOutChannels = 0;
@@ -40,8 +40,8 @@ void ABiOSSoundStream::printDeviceList() const{
 }
 
 std::vector<ofSoundDevice> ABiOSSoundStream::getDeviceList() const{
-  
-        return vector<ofSoundDevice>();
+    
+    return vector<ofSoundDevice>();
     
 }
 
@@ -56,12 +56,12 @@ int ABiOSSoundStream::getDeviceID()  const{
 }
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::setInput(ofBaseSoundInput * soundInput) {
-	soundInputPtr = soundInput;
+    soundInputPtr = soundInput;
 }
 
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::setOutput(ofBaseSoundOutput * soundOutput) {
-	soundOutputPtr = soundOutput;
+    soundOutputPtr = soundOutput;
 }
 
 //------------------------------------------------------------------------------
@@ -99,8 +99,8 @@ bool ABiOSSoundStream::setup(int numOfOutChannels, int numOfInChannels, int samp
 //------------------------------------------------------------------------------
 bool ABiOSSoundStream::setup(ofBaseApp * app, int numOfOutChannels, int numOfInChannels, int sampleRate, int bufferSize, int numOfBuffers){
     setInput(app);
-	setOutput(app);
-	bool bOk = setup(numOfOutChannels, numOfInChannels, sampleRate, bufferSize, numOfBuffers);
+    setOutput(app);
+    bool bOk = setup(numOfOutChannels, numOfInChannels, sampleRate, bufferSize, numOfBuffers);
     return bOk;
 }
 
@@ -153,17 +153,17 @@ void ABiOSSoundStream::close(){
 
 //------------------------------------------------------------------------------
 long unsigned long ABiOSSoundStream::getTickCount() const{
-	return 0;
+    return 0;
 }
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getNumOutputChannels() const{
-	return numOfOutChannels;
+    return numOfOutChannels;
 }
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getNumInputChannels() const{
-	return numOfInChannels;
+    return numOfInChannels;
 }
 
 //------------------------------------------------------------------------------
@@ -189,36 +189,36 @@ SoundOutputStream * ABiOSSoundStream::getSoundOutStream(){
 
 //------------------------------------------------------------------------------
 bool ABiOSSoundStream::setMixWithOtherApps(bool bMix){
-	AVAudioSession * audioSession = [AVAudioSession sharedInstance];
-	bool success = false;
-	
-    #ifdef __IPHONE_6_0
-	if(bMix) {
-		if([audioSession respondsToSelector:@selector(setCategory:withOptions:error:)]) {
-			if([audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
-							 withOptions:AVAudioSessionCategoryOptionMixWithOthers
-								   error:nil]) {
-				success = true;
-			}
-		}
-	} else {
-    #endif
+    AVAudioSession * audioSession = [AVAudioSession sharedInstance];
+    bool success = false;
     
-		// this is the default category + options setup
-		// Note: using a sound input stream will set the category to PlayAndRecord
-		if([audioSession setCategory:AVAudioSessionCategorySoloAmbient error:nil]) {
-			success = true;
-		}
+#ifdef __IPHONE_6_0
+    if(bMix) {
+        if([audioSession respondsToSelector:@selector(setCategory:withOptions:error:)]) {
+            if([audioSession setCategory:AVAudioSessionCategoryPlayAndRecord
+                             withOptions:AVAudioSessionCategoryOptionMixWithOthers
+                                   error:nil]) {
+                success = true;
+            }
+        }
+    } else {
+#endif
         
-    #ifdef __IPHONE_6_0
-	}
-    #endif
+        // this is the default category + options setup
+        // Note: using a sound input stream will set the category to PlayAndRecord
+        if([audioSession setCategory:AVAudioSessionCategorySoloAmbient error:nil]) {
+            success = true;
+        }
+        
+#ifdef __IPHONE_6_0
+    }
+#endif
     
-	if(!success) {
-		ofLogError("ABiOSSoundStream") << "setMixWithOtherApps(): couldn't set app audio session category";
-	}
-	
-	return success;
+    if(!success) {
+        ofLogError("ABiOSSoundStream") << "setMixWithOtherApps(): couldn't set app audio session category";
+    }
+    
+    return success;
 }
 
 #endif

@@ -12,10 +12,15 @@ void controlThread::setup(float* vol_){
 void controlThread::threadedFunction(){
     while(isThreadRunning()){
         *volumePtr = abs(sin(ofGetElapsedTimef()));
-        cout << *volumePtr << endl;
-
+        //  you might need to adjust the sleeptime for your app
         ofSleepMillis(40);
-    }
-    
+    }    
 }
 
+void controlThread::checkIAAStart(int* b_){
+    [appDelegatePtr checkIAACon:b_];
+}
+
+void controlThread::checkCon(bool* b_){
+    [appDelegatePtr checkCon:b_];
+}

@@ -68,7 +68,7 @@
 		67DFA53419F92A5E003B3434 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		8398D2111EC60E7300ECDCF4 /* ofAudiobusTemplate.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ofAudiobusTemplate.entitlements; sourceTree = "<group>"; };
 		8398D2121EC60EB800ECDCF4 /* controlThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = controlThread.h; sourceTree = "<group>"; };
-		8398D2131EC60EFC00ECDCF4 /* controlThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = controlThread.cpp; sourceTree = "<group>"; };
+		8398D2131EC60EFC00ECDCF4 /* controlThread.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = controlThread.cpp; sourceTree = "<group>"; };
 		8398D2181EC61B6200ECDCF4 /* ABiOSSoundStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABiOSSoundStream.h; sourceTree = "<group>"; };
 		8398D2191EC61B6200ECDCF4 /* ABiOSSoundStream.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ABiOSSoundStream.mm; sourceTree = "<group>"; };
 		8398D21B1EC61EB500ECDCF4 /* MyAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyAppDelegate.h; sourceTree = "<group>"; };

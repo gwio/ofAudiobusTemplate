@@ -7,14 +7,14 @@ ABiOSSoundStream* ofApp::getSoundStream(){
 }
 
 //--------------------------------------------------------------
-void ofApp::setup(){	
-
-    
+void ofApp::setupAudioStream(){
     stream = new ABiOSSoundStream();
-    stream->setup(this, 2, 0, 44100,512, 2);
-    stream->start();
+    //it seems to work better if you also setup an output channel even without using it.
+    stream->setup(this, 2, 1, 44100,512, 0);
+}
 
-    
+//--------------------------------------------------------------
+void ofApp::setup(){	
 
     volume = 0.0;
     
@@ -35,7 +35,6 @@ void ofApp::draw(){
 void ofApp::exit(){
     myControlThread.stopThread();
     ofSoundStreamClose();
-
 }
 
 //--------------------------------------------------------------
