@@ -12,10 +12,12 @@
 - Issues: Just a small problem, when the OF-App is already running and not started from within Audiobus: In that case any FX app that tries to connect to it produces a audio freeze. No issues when loading the FX first and then plugging the OF App in.
 
 ---
-You will need to replace the key with a new one from https://developer.audiob.us/
+You will need to replace the "Audiobus" app key with a new one from https://developer.audiob.us/
 
 
 If you create a project from scratch, you will need to got to xcode->capabilities and activate Background Modes - Audio and Inter-App Audio. Edit the Info plist, adding the AudioComponents description and set "App does not run in background" to NO.
+
+You might also need to enable the Inter-App-Audio service in your Apple Dev account -> App ID's -> Services.
 
 When using the background mode, the ofApp->update thread will pause. So if you have a audio control chain already running in a different thread, like pd or so, it should continue to produce sound. Otherwise you will need to extend a class with ofThread, like in the example, to access stuff outside your audio thread. 
 
