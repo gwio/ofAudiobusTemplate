@@ -9,6 +9,8 @@
 #import <Foundation/Foundation.h>
 #import <AudioToolbox/AudioToolbox.h>
 
+typedef void (^ABAudioUnitFaderBlock)(void);
+
 /*!
  * Audio Unit Fader
  *
@@ -49,7 +51,7 @@
  * @param audioUnit A reference to a Remote IO audio unit (kAudioUnitSubType_RemoteIO)
  * @param block Block to call on completion of fade-out
  */
-+ (void)fadeOutAudioUnit:(AudioUnit)audioUnit completionBlock:(void(^)())block;
++ (void)fadeOutAudioUnit:(AudioUnit)audioUnit completionBlock:(ABAudioUnitFaderBlock)block;
 
 /*!
  * Start, then fade in audio unit
@@ -80,7 +82,7 @@
  * @param beginBlock Block to call at beginning of process, after initialisation
  * @param completionBlock Block to call on completion of fade-in
  */
-+ (void)fadeInAudioUnit:(AudioUnit)audioUnit beginBlock:(void(^)())beginBlock completionBlock:(void(^)())completionBlock;
++ (void)fadeInAudioUnit:(AudioUnit)audioUnit beginBlock:(ABAudioUnitFaderBlock)beginBlock completionBlock:(ABAudioUnitFaderBlock)completionBlock;
 
 /*!
  * Determine if there are any running transitions

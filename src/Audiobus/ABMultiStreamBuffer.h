@@ -27,7 +27,7 @@ typedef void* ABMultiStreamBufferSource;
  *  allowing you to enqueue and buffer disparate audio streams, then dequeue the
  *  synchronized audio streams for further processing.
  *
- *  This is primarily for use with @link ABReceiverPort @endlink when receiving audio
+ *  This is primarily for use with @link ABAudioReceiverPort @endlink when receiving audio
  *  as separate streams, while also receiving audio from the device audio input. In
  *  this case, all audio streams may need to be synchronized for recording or processing
  *  in your app.
@@ -41,7 +41,7 @@ typedef void* ABMultiStreamBufferSource;
  *  Then, at each time interval (such as within a Core Audio input callback), enqueue 
  *  each of your input sources - for example, first, an audio buffer from the system audio 
  *  input, followed by audio from each of the connected audio sources, retrieved using
- *  [ABReceiverPortReceive](@ref ABReceiverPort::ABReceiverPortReceive).
+ *  [ABAudioReceiverPortReceive](@ref ABAudioReceiverPort::ABAudioReceiverPortReceive).
  *
  *  Each time you enqueue a source, you must pass an identifier for that source as the
  *  second argument to @link ABMultiStreamBufferEnqueue @endlink. This can be any value

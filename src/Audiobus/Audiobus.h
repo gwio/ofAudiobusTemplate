@@ -7,9 +7,15 @@
 //
 
 #import "ABCommon.h"
-#import "ABReceiverPort.h"
-#import "ABSenderPort.h"
-#import "ABFilterPort.h"
+
+#import "ABAudioSenderPort.h"
+#import "ABAudioFilterPort.h"
+#import "ABAudioReceiverPort.h"
+
+#import "ABMIDISenderPort.h"
+#import "ABMIDIFilterPort.h"
+#import "ABMIDIReceiverPort.h"
+
 #import "ABAudiobusController.h"
 #import "ABPeer.h"
 #import "ABPort.h"
@@ -17,24 +23,30 @@
 #import "ABButtonTrigger.h"
 #import "ABMultiStreamBuffer.h"
 #import "ABAudioUnitFader.h"
+
+#import "ABAudioSenderPort.h"
+#import "ABAudioFilterPort.h"
+#import "ABAudioReceiverPort.h"
+
 #import <AVFoundation/AVFoundation.h>
 #import <Accelerate/Accelerate.h>
 
-#define ABSDKVersionString @"2.3.3"
+#define ABSDKVersionString @"3.0.6"
 
 /*!
 @mainpage
 
-@section Introduction
+Introduction
+============
 
  <blockquote>
- If you're already familiar with Audiobus and are integrating the 2.x version of the Audiobus SDK,
- then check out the [Migration Guide](@ref Migration-Guide) to find out what's changed.
+ If you're already familiar with Audiobus and are integrating the 3.x version of the Audiobus SDK,
+ then check out the [3.x Migration Guide](@ref Migration-Guide) to find out what's changed.
  </blockquote>
  
  Audiobus is an SDK and accompanying [controller app](https://audiob.us/download) that allows iOS 
- apps to stream audio to one another. Just like audio cables, Audiobus lets you connect apps 
- together as modules, to  build sophisticated audio production and processing configurations.
+ apps to stream audio and MIDI to one another. Just like audio and MIDI cables, Audiobus lets you connect apps
+ together as modules, to  build sophisticated audio and MIDI production and processing configurations.
 
  The Audiobus SDK provides all you need to make your app Audiobus compatible.  It's designed to be
  extremely easy to use: depending on your app, you should be up and running with Audiobus well within 
@@ -46,7 +58,8 @@
 - An Xcode project with a number of sample apps that you can build and run
 - A README file with a link to this documentation
 
-@section Dont-Panic Don't Panic!
+Don't Panic!
+============
 
  We've worked hard to make Audiobus a piece of cake to integrate. Most developers will be able
  to have a functional integration within thirty minutes. Really.
@@ -59,9 +72,9 @@
  - [Adding the Audiobus SDK files to your project](@ref Project-Setup), with or without CocoaPods,
  - [Enabling Inter-App Audio and Background Audio](@ref Audio-Setup),
  - Creating a [launch URL](@ref Launch-URL) and [registering your app with us](@ref Register-App),
- - Creating instances of the [Audiobus Controller](@ref Create-Controller), and
-   [Receiver](@ref Create-Receiver-Port), [Filter](@ref Create-Filter-Port) 
-   and/or [Sender](@ref Create-Sender-Port) ports.
+ - Creating an instance of the [Audiobus Controller](@ref Create-Controller)
+ - Adding [Audio Sender](@ref Create-Audio-Sender-Port), [Audio Filter](@ref Create-Audio-Filter-Port) and/or [Audio Receiver](@ref Create-Audio-Receiver-Port) ports.
+ - Adding [MIDI Sender](@ref Create-MIDI-Sender-Port), [MIDI Filter](@ref Create-MIDI-Filter-Port) and/or [MIDI Receiver](@ref Create-MIDI-Receiver-Port) ports.
  - [Testing](@ref Test)
  - [Going live](@ref Go-Live)
 
@@ -75,33 +88,36 @@
  Finally, if you need a little extra help, or just wanna meet and talk with us or other
  Audiobus-compatible app developers, come say hello on the [developer community forum](https://heroes.audiob.us).
 
-@section Capabilities Capabilities: Inputs, Effects and Outputs
+Capabilities: Audio Sending, Filtering and Receiving
+====================================================
 
- <img src="overview.png" width="570" height="422" title="Audiobus Peers and Ports" />
+ <img src="overviewAudio.png" width="570" height="422" title="Audiobus Audio Peers and Ports" />
  
- Audiobus defines three different capabilities that an Audiobus-compatible app can have: sending,
- filtering and receiving. Your app can perform several of these roles at once. You create sender,
+ Audiobus defines three different audio capabilities that an Audiobus-compatible app can have: sending,
+ filtering and receiving. Your app can perform several of these roles at once. You create audio sender,
  receiver and/or filter ports when your app starts, and/or as your app's state changes.
 
- **Senders** transmit audio to other apps (receivers or filters). A sender will typically send the
+ **Audio senders** transmit audio to other apps (audio receivers or filters). A sender will typically send the
  audio that it's currently playing out of the device's audio output device. For
- example, a musical instrument app will send the sounds the user is currently playing.
-
- **Receivers** accept audio from sender or filter apps. What is done with the received audio depends
- on the app. A simple recorder app might just save the recorded audio to disk. A multi-track recorder 
- might save the audio from each sender app as a separate track. An audio analysis app might display 
- information about the nature of the received audio, live.
+ example, a musical instrument app will send the sounds or the notes the user is currently playing.
  
- **Filters** accept audio input, process it, then send it onwards to another app over Audiobus. This
- allows applications to apply effects to the audio stream. Filters also behave as inputs or receivers,
+ **Audio filters** accept audio input, process it, then send it onwards to another app over Audiobus. This
+ allows applications to apply effects to the audio stream. Audio filters also behave as inputs or receivers,
  and can go in the "Input" and "Output" positions in Audiobus.
 
- Receiver apps can receive from one or more sources, and filters can accept audio from multiple sources.
+
+ **Audio receivers** accept audio from audio sender or filter apps. What is done with the received audio depends
+ on the app. A simple recorder app might just save the recorded audio to disk. A multi-track recorder
+ might save the audio from each sender app as a separate track. An audio analysis app might display
+ information about the nature of the received audio, live.
  
- Receivers can receive audio from connected source apps in two ways: mixed down to a single stereo stream,
+ 
+ Audio receiver apps can receive from one or more sources, and audio filters can accept audio from multiple sources.
+ 
+ Audio receivers can receive audio from connected source apps in two ways: mixed down to a single stereo stream,
  or with one stereo stream per connected source.
  
- By setting the [receiveMixedAudio](@ref ABReceiverPort::receiveMixedAudio) property of the port to YES
+ By setting the [receiveMixedAudio](@ref ABAudioReceiverPort::receiveMixedAudio) property of the port to YES
  (the default), the port will automatically mix all the sources together, giving your application one
  stereo stream.
  
@@ -109,8 +125,33 @@
  can be useful for providing users with per-app mixing controls, or multi-track recording.
 
  <div style="clear: both;"></div>
+ 
+Capabilities: MIDI Sending, Filtering and Receiving
+===================================================
+ 
+ <img src="overviewMIDI.png" width="570" height="422" title="Audiobus MIDI Peers and Ports" />
+ 
+ MIDI routing in Audiobus works in the same way audio routing does: There are 
+ MIDI senders, MIDI filters and MIDI receivers.
+ 
+ **MIDI Senders** transmit MIDI to other apps (MIDI receivers or filters).
+ A Keyboard app for example is a typical MIDI sender. The notes played on the UI
+ are transformed into MIDI message and sent out to other apps.
+ 
+ **MIDI Filters** accept MIDI input, process it, then send it onwards to another 
+ app over Audiobus. This allows applications apply effects to the MIDI stream. 
+ Typical MIDI filter apps are arpeggiators, chord or time quantizers, etc.
+ 
+ **MIDI Receivers** accept MIDI from MIDI sender or filter apps. What is done with
+ the received MIDI depends on the app. A simple MIDI recorder might just save the
+ MIDI to disk. A synthesizer could transform the MIDI into audible sounds. 
+ An audio effect could use the MIDI to change its effects parameters. 
+ 
 
-@section More-Help More Help
+ 
+ 
+More Help
+=========
  
  If you need any additional help integrating Audiobus into your application, or if you have
  any suggestions, then please join us on the [developer community forum](https://heroes.audiob.us).
@@ -126,11 +167,12 @@
  
  Many app developers will be able to implement Audiobus in just thirty minutes or so.
 
- This quick-start guide assumes your app uses Remote IO. If this is not the case, most of it
- will still be relevant, but you'll need to do some additional integration work which is beyond
+ This quick-start guide assumes your app uses the Core Audio C API or AVAudioEngine. If this is not the
+ case, most of it will still be relevant, but you'll need to do some additional integration work which is beyond
  the scope of this documentation.
  
-@section General-Principles General Design Principles
+General Design Principles                                  {#General-Principles}
+=========================
  
  We've worked hard to make Audiobus as close as possible to an "it just works" experience for 
  users. We think music on iOS should be easy and open to everyone, not just those technical 
@@ -139,11 +181,10 @@
  That means you should add **no switches to enable/disable Audiobus, no settings that users need 
  to configure to enable your app to run in the background while connected to Audiobus**.
 
- If you're a sender app or a filter app (i.e. you have an ABSenderPort and/or an 
- ABFilterPort, and only send audio to other apps or filter audio from other apps), you shouldn't
+ If you're a sender app or a filter app (i.e. you have an ABAudioSenderPort, ABAudioFilterPort, ABMIDISenderPort or ABMIDIFilterPort, and only send to other apps or filter audio/MIDI from other apps), you shouldn't
  need to ever add any Audiobus-specific UI. Audiobus takes care of all session management for
- you. If you're a receiver app (you have an ABReceiverPort) then unless you're doing nifty things
- with multitrack recording, you shouldn't need to add Audiobus UI either.
+ you. If you're a receiver app (you have an ABAudioReceiverPort or an ABMIDIReceiverPort) then unless you're doing nifty things
+ with multitrack recording, you shouldn't need to add Audiobus-specific UI either.
  
  Additionally, you should not offer Audiobus support as an in-app purchase, as this violates the
  "just works" principle.  We would be unable to list such apps in our Compatible Applications
@@ -154,12 +195,7 @@
  Audiobus Compatible Apps directory, or to ban them from Audiobus entirely.
  </blockquote>
  
- We've also worked hard to make Audiobus a robust and smart transport protocol, with automatic 
- latency adjustment, live audio stutter repair, seamless audio format and sample rate 
- conversion and other niceties. So, generally speaking, there shouldn't be much menial work 
- that you need to do to make it work.
- 
- Audiobus' sender port is extremely light when not connected: the send function ABSenderPortSend
+ Audiobus' audio sender port is extremely lightweight when not connected: the send function ABAudioSenderPortSend
  will consume a negligible amount of CPU, so you can use it even while not connected to Audiobus, for
  convenience.
  
@@ -170,7 +206,8 @@
  In short: whenever possible, keep it simple. Your users will thank you, and you'll have more
  development time to devote to the things you care about.
  
-@section Preparation 1. Determine if your app will work with Audiobus
+1. Determine if your app will work with Audiobus                  {#Preparation}
+================================================
  
  Audiobus relies heavily on multitasking, and one thing that is vital in apps that work together is
  that they are able to perform adequately alongside other apps, in a low-latency Audiobus environment.
@@ -189,29 +226,6 @@
  If your app does not support a hardware buffer duration of 5ms without demonstrating performance problems
  on the iPad 3 and up, or the iPhone 5 and up, then we reserve the option to not list it in the Audiobus-compatible 
  app listing on our website and within the Audiobus app, or to ban it from Audiobus entirely.
- </blockquote>
-
- <blockquote class="alert" id="audiobus-ios7-bug">
- Due to an iOS 7 bug, in order to make your app work with Audiobus on iOS 7 you must ensure that:
- 
- 1. Your app's Bundle Name is identical to your app's Product Name.
- 2. Both Bundle Name and Product Name are less than 16 characters in length.
- 
- If you do not adhere to these limitations, you will see an Audiobus error
- within your app's console output informing you that "There was a problem setting up Audiobus communication".
- 
- Note that you can safely change these values without causing problems with an already-live
- app on the App Store. These changes will not be visible to users.
- </blockquote>
- 
- <blockquote class="alert" id="audiobus-ios7-status-bar-bug">
- Due to another iOS 7 issue, it's important that you do not use the UIViewController property
- 'prefersStatusBarHidden' to hide the iOS status bar. This will result in the Audiobus Connection
- Panel becoming unresponsive when placed on the left side of the screen.
- 
- Instead, we recommend adding a `UIViewControllerBasedStatusBarAppearance` entry to your app's
- Info.plist with the boolean value NO, then hide your status bar as under iOS 6, with a
- `UIStatusBarHidden` entry in Info.plist, or via UIApplication's 'statusBarHidden' property.
  </blockquote>
  
  <blockquote class="alert" id="retronyms-audioio-bug">
@@ -232,22 +246,24 @@
  this the other way around, you'll get some weird behaviour, like silent output when used with IAA.
  </blockquote>
  
-@section Project-Setup 2. Add the Audiobus SDK to Your Project
+2. Add the Audiobus SDK to Your Project        {#Project-Setup}
+===============================================================
 
  Audiobus is distributed as a static library, plus the associated header files.
  
  The easiest way to add Audiobus to your project is using [CocoaPods](https://cocoapods.org):
  
- 1. Add "pod 'Audiobus'" to your Podfile, or, if you don't have one: at the top level of your project
-    folder, create a file called "Podfile" with the following content:
-    @code
-    pod 'Audiobus'
-    @endcode
- 2. Then, in the terminal and in the same folder, type:
-    @code
+ 1. If you don't have a Podfile at the top level of your project, create a file called "Podfile".
+ 2. Open your Podfile and add the following code, replacing `testTarget` with the name of your target:
+ @code
+ target 'testTarget' do
+   pod 'Audiobus'
+ end
+ @endcode
+ 3. In the terminal and in the same folder, type:
+   @code
     pod install
-    @endcode
-    
+   @endcode
     In the future when you're updating your app, use `pod outdated` to check for available updates,
     and `pod update` to apply those updates.
  
@@ -268,12 +284,15 @@
     - AudioToolbox
     - QuartzCore
     - Security
+    - libz.tbd
  
- Note that for technical reasons the Audiobus SDK supports iOS 7.0 and up only.
+ Note that for technical reasons the Audiobus SDK supports iOS 8.0 and up only.
+ 
 
-@section Audio-Setup 3. Enable Background Audio and Inter-App Audio
+3. Enable Background Audio and Inter-App Audio        {#Audio-Setup}
+==============================================
 
- If you haven't already done so, you must enable background audio and Inter-App Audio in your app.
+ If you haven't already done so, you must enable background audio and Inter-App Audio in your app -- even if you plan to [create a MIDI-only app](@ref Working-With-MIDI).
  
  To enable these:
 
@@ -285,7 +304,8 @@
     cause Xcode to update your App ID with Apple's "Certificates, Identifiers & Profiles" portal,
     and create or update an Entitlements file.
 
-@subsection Lifecycle Managing Your App's Life-Cycle
+ Managing Your App's Life-Cycle                                     {#Lifecycle}
+ ------------------------------
 
  Your app will only continue to run in the background if you have an *active, running*
  audio system. This means that if you stop your audio system while your app is in the background
@@ -320,41 +340,31 @@
  
  The following describes the background policy we strongly recommend for use with Audiobus.
  
- 1. When your app moves to the background, you should only stop your audio engine if (a) you are
+ 1. When your app moves to the background, you should only stop your audio engine if you are
     not currently connected via either Audiobus or Inter-App Audio, which can be determined via
-    the [connected](@ref ABAudiobusController::connected) property of ABAudiobusController and 
-    (b) you are not part of an active Audiobus session (i.e. your app has been used with Audiobus,
-    and Audiobus is still running), which can be determined via the
-    [memberOfActiveAudiobusSession](@ref ABAudiobusController::memberOfActiveAudiobusSession) property. 
+    the [connected](@ref ABAudiobusController::connected) property of ABAudiobusController.
     For example:
- 
-     @code
-     -(void)applicationDidEnterBackground:(NSNotification *)notification {
-         if ( !_audiobusController.connected && !_audiobusController.memberOfActiveAudiobusSession ) {
-            // Fade out and stop the audio engine, suspending the app, if we're not connected, and we're not part of an active Audiobus session
-            [ABAudioUnitFader fadeOutAudioUnit:_audioEngine.audioUnit completionBlock:^{ [_audioEngine stop]; }];
+   @code
+         -(void)applicationDidEnterBackground:(NSNotification *)notification {
+             if ( !_audiobusController.connected ) {
+                // Fade out and stop the audio engine, suspending the app, if we're not connected
+                [ABAudioUnitFader fadeOutAudioUnit:_audioEngine.audioUnit completionBlock:^{ [_audioEngine stop]; }];
+             }
          }
-     }
-     @endcode
-
- 2. Your app should continue to remain active in the background while connected and while Audiobus is running.
-    When you are disconnected and Audiobus quits, your app should suspend too. You can do this by observing
-    the two above properties. Once both are NO, stop your audio engine as appropriate:
- 
-    @code
-    static void * kAudiobusConnectedOrActiveMemberChanged = &kAudiobusConnectedOrActiveMemberChanged;
+   @endcode
+ 2. Your app should continue to remain active in the background while connected.
+    When you are disconnected, your app should suspend too. You can do this by observing
+    the above property. Once the value is NO, stop your audio engine as appropriate:
+   @code
+    static void * kAudiobusConnectedChanged = &kAudiobusConnectedChanged;
  
     ...
  
-    // Watch the connected and memberOfActiveAudiobusSession properties
-    [_audiobusController addObserver:self 
+    // Watch the connected property
+    [self.audiobusController addObserver:self 
                           forKeyPath:@"connected"
                              options:0 
-                             context:kAudiobusConnectedOrActiveMemberChanged];
-    [_audiobusController addObserver:self 
-                          forKeyPath:@"memberOfActiveAudiobusSession"
-                             options:0 
-                             context:kAudiobusConnectedOrActiveMemberChanged];
+                             context:kAudiobusConnectedChanged];
  
     
     ...
@@ -364,37 +374,35 @@
                            change:(NSDictionary *)change
                           context:(void *)context {
  
-        if ( context == kAudiobusConnectedOrActiveMemberChanged ) {
+        if ( context == kAudiobusConnectedChanged ) {
             if ( [UIApplication sharedApplication].applicationState == UIApplicationStateBackground
-                   && !_audiobusController.connected
-                   && !_audiobusController.memberOfActiveAudiobusSession ) {
+                   && !_audiobusController.connected ) {
  
-                // Audiobus session is finished. Time to sleep.
+                // Disconnected. Time to sleep.
                 [_audioEngine stop];
             }
         } else {
             [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
         }
     }
-    @endcode
- 
+   @endcode
  3. When your app moves to the foreground, start your audio engine:
- 
-    @code
+   @code
     -(void)applicationWillEnterForeground:(NSNotification *)notification {
         if ( !_audioEngine.running ) {
             // Start the audio system if it wasn't running
             [_audioEngine start];
         }
     }
-    @endcode
+   @endcode
  
  Note that during development, if you have not yet registered your app with Audiobus
  ([Step 5](@ref Register-App)), the Audiobus app will only be able to see your app while
  it is running. Consequently we **strongly recommend** registering your app before you 
  begin testing.
 
-@section Launch-URL 4. Set up a Launch URL
+4. Set up a Launch URL        {#Launch-URL}
+======================
 
  Audiobus needs a URL (like `YourApp-1.0.audiobus://`) that can be used to launch and switch to
  your app, and used to determine if your app is installed.
@@ -421,7 +429,8 @@
 
  Other apps will now be able to switch to your app by opening the `YourApp-1.0.audiobus://` URL.
  
-@section Register-App 5. Register Your App and Generate Your API Key
+5. Register Your App and Generate Your API Key        {#Register-App}
+==============================================
 
  Audiobus contains an app registry which is used to enumerate Audiobus-compatible apps that
  are installed. This allows apps to be seen by Audiobus even if they are not actively running
@@ -476,7 +485,8 @@
  compatible apps directly again. You can register new versions of your app by clicking "Add Version" on
  your app page.
  
-@section Enable-Mixing 6. Enable mixing audio with other apps
+6. Enable mixing audio with other apps        {#Enable-Mixing}
+======================================
 
  When you use audio on iOS, you typically select one of several audio session categories,
  usually either `AVAudioSessionCategoryPlayAndRecord` or `AVAudioSessionCategoryPlayback`.
@@ -502,8 +512,9 @@
 
  Note that with the old Audio Session C API, adjusting other session properties can interfere with
  this property setting, causing other apps to be interrupted despite the mix property being set.
- Consequently, be sure to reset the `kAudioSessionProperty_OverrideCategoryMixWithOthers` property value
- whenever you assign any audio session properties.
+ To avoid problems, we recommend only using the modern AVAudioSession API. If you do need to use
+ the older C API though, be sure to reset the `kAudioSessionProperty_OverrideCategoryMixWithOthers`
+ property value whenever you assign any audio session properties.
  
  <blockquote class="alert" id="audio-session-warning">
  If you're interacting with the audio session (via AVAudioSession or the old C API), you **must** set the
@@ -511,7 +522,8 @@
  this the other way around, you'll get some weird behaviour, like silent output when used with IAA.
  </blockquote>
 
-@section Create-Controller 7. Instantiate the Audiobus Controller
+7. Instantiate the Audiobus Controller        {#Create-Controller}
+======================================
 
  Next, you need to create a strong property for an instance of the Audiobus Controller. A convenient place
  to do this is in your app's delegate, or within your audio engine class.
@@ -525,9 +537,9 @@
  Next declare a strong (retaining) property for the instance from within a class extension:
 
  @code
- @interface MyAppDelegate ()
- @property (strong, nonatomic) ABAudiobusController *audiobusController;
- @end
+     @interface MyAppDelegate ()
+     @property (strong, nonatomic) ABAudiobusController *audiobusController;
+     @end
  @endcode
 
  Now you'll need to create an instance of the Audiobus controller. A convenient place to do this
@@ -578,7 +590,8 @@
  > If the connection panel is on the bottom of the screen, it cannot be hidden by
  > the user. This is to avoid interference by the iOS Control Center panel.
 
-@section Create-Ports 8. Create Ports
+8. Create Ports        {#Create-Ports}
+===============
 
  Now you're ready to create your Audiobus ports.
  
@@ -587,32 +600,42 @@
  being generous with your port offering, to enable maximum flexibility, such as per-track routing. Take a look at
  Loopy or Loopy HD for an example of the use of multiple ports.
  
- Note that you should create all your ports when your app starts, regardless of whether you intend to use them 
+ If you plan to work with MIDI in your app, you may want to create some MIDI ports, as well; see [Working With MIDI](@ref Working-With-MIDI) for more information.
+ 
+ Note that you should create all your ports when your app starts, regardless of whether you intend to use them
  straight away, or you'll get some weird behaviour. If you're not using them, just keep them silent (or inactive, 
  by not calling the receive/send functions).
  
  <blockquote class="alert">
- Due to some changes in iOS 9, we now **strongly discourage** you from creating apps that have only a receiver
- port (ABReceiverPort). Such apps will not be able to be identified as installed by Audiobus on iOS 9.
+ Due to some changes since iOS 9, we now **strongly discourage** you from creating apps that have only a receiver
+ port (ABAudioReceiverPort). Such apps will not be able to be identified as installed by Audiobus on iOS 9 or later.
  
  To repeat: you should create a sender port or a filter port, in addition to any receiver ports you require.
  If this is simply not an option, **please contact us before proceeding**.
  
- This is a limitation enforced by security changes on iOS 9 that prohibit Audiobus from detecting installed apps
+ This is a limitation enforced by security changes since iOS 9 that prohibit Audiobus from detecting installed apps
  unless they provide sender or filter ports.
  </blockquote>
-
- @subsection Create-Sender-Port Sender Port
  
- If you intend to send audio, then you'll need to create an ABSenderPort.
-
+ > If you are using the Audio Queue API in your app, unfortunately there is no convenient way to support sending
+ > audio via Audiobus. You can, however, support [receiving from Audiobus](@ref Audio-Queue-Input).
+ 
+ 
+ Audio Sender Port                                              {#Create-Audio-Sender-Port}
+ -----------------
+ 
+ In almost all cases, you'll need to create an ABAudioSenderPort. Even if you don't intend your app to send audio,
+ a sender port is required in order to detect your app, and to launch it.
+ 
  The first sender port you define will be the one that Audiobus will connect to when the user taps your app
  in the port picker within Audiobus, so it's best to define the port with the most general, default behaviour
  first.
 
+ > Sender ports can be hidden from within Audiobus, by ticking the "Hidden" checkbox by the port entry at the Audiobus Developer Center.
+ 
  Firstly, you'll need to create an AudioComponents entry within your app's Info.plist. This identifies your
  port to other apps. If you have integrated Inter-App Audio separately, and you already have an AudioComponents entry,
- you can use these values with your ABSenderPort without issue. Otherwise:
+ you can use these values with your ABAudioSenderPort without issue. Otherwise:
 
  1. Open your app target screen within Xcode by selecting your project entry at the top of Xcode's 
     Project Navigator, and selecting your app from under the "TARGETS" heading.
@@ -626,12 +649,12 @@
  5. Create five different new rows, by pressing Enter to create a new row and editing its properties:
     - "manufacturer" (of type String): set this to any four-letter code that identifies you (like "abus")
     - "type" (of type String): set this to "aurg", which means that we are identifying a "Remote Generator" audio unit,
-      or "auri" for a "Remote Instrument" unit.
+      or "auri" for a "Remote Instrument" unit which can [receive MIDI](@ref Create-MIDI-Receiver-Port).
     - "subtype" (of type String): set this to any four-letter code that identifies the port.
     - "name" (of type String): Apple recommend that you set this to "Manufacturer: App name" (see [WWDC 2013 session 602,
       page 37](https://devstreaming.apple.com/videos/wwdc/2013/602xcx2xk6ipx0cusjryu1sx5eu/602/602.pdf?dl=1)). If you
       publish multiple ports, you will need to identify the particular port, too. We propose "Manufacturer: App name (Port name)".
-      Note that this field does not need to match the name or title you pass to ABSenderPort.
+      Note that this field does not need to match the name or title you pass to ABAudioSenderPort.
     - "version" (of type Number): set this to any integer (whole number) you like. "1" is a good place to start.
 
  Once you're done, it should look something like this:
@@ -647,38 +670,42 @@
  but this is not a guarantee of uniqueness among non-Audiobus apps.
  </blockquote>
  
- Note that Remote Generator (type 'aurg') and Remote Instrument (type 'auri') nodes are treated exactly the same within Audiobus.
- The distinction between these two is specific to Inter-App Audio. Remote Generator nodes are simple audio sources, while
- Remote Instrument nodes have the additional capability of accepting MIDI input over the Inter-App Audio channel and rendering
- audio based on this input. Audiobus itself does not make use of this functionality at this time.
+ If you intend to [work with MIDI](@ref Create-MIDI-Receiver-Port), you may wish to specify the Remote Instrument ('auri') type
+ for your audio component.  See [Working With MIDI](@ref Working-With-MIDI) for more information. 
+ 
+ <blockquote class="alert">
+ If you create a port of Remote Instrument ('auri') you need to make sure that your port is not receiving twice, one time via Inter-App audio and a second time via Core MIDI. To ensure that you must assign a block to the [enableReceivingCoreMIDIBlock](@ref ABAudiobusController::enableReceivingCoreMIDIBlock) property. Audiobus calls this block to tell your app exactly when to enable or disable receiving via Core MIDI. See [here](@ref Disable-Core-MIDI) for more details.
+ </blockquote>
  
  If you wish to use more than one AudioComponentDescription to publish the port, to provide both Remote Generator and
  Remote Instrument types for example, you may provide the additional AudioComponentDescription to the sender port via
- @link ABSenderPort::registerAdditionalAudioComponentDescription: ABSenderPort's registerAdditionalAudioComponentDescription: @endlink
+ @link ABAudioSenderPort::registerAdditionalAudioComponentDescription: ABAudioSenderPort's registerAdditionalAudioComponentDescription: @endlink
  method (you will need to call AudioOutputUnitPublish for the additional types yourself).
  
- Now it's time to create an ABSenderPort instance. You provide a port name, for internal use, and a port
+ Now it's time to create an ABAudioSenderPort instance. You provide a port name, for internal use, and a port
  title which is displayed to the user. You can localise the port title.
  
  You may choose to provide your IO audio unit (of type kAudioUnitSubType_RemoteIO), which will cause the sender port 
- to automatically capture and send the audio output. This is the recommended, easiest, and most efficient approach.
+ to automatically capture and send the audio output. This is the recommended, easiest, and most efficient approach. If you
+ are using the C Core Audio API, this will be your main output unit. If you are using AVAudioEngine, you can access this
+ via AVAudioOutputNode/AVAudioInputNode's "audioUnit" property.
  
  Alternatively, if you're creating secondary ports, or have another good reason for not using your IO audio unit with the
- sender port at all, then you send audio by calling @link ABSenderPort::ABSenderPortSend ABSenderPortSend @endlink,
- then mute your audio output depending on the value of @link ABSenderPort::ABSenderPortIsMuted ABSenderPortIsMuted @endlink.
+ sender port at all, then you send audio by calling @link ABAudioSenderPort::ABAudioSenderPortSend ABAudioSenderPortSend @endlink,
+ then mute your audio output depending on the value of @link ABAudioSenderPort::ABAudioSenderPortIsMuted ABAudioSenderPortIsMuted @endlink.
 
- > ABSenderPort when initialized without an audio unit will create and publish its own audio unit with the
- > AudioComponentDescription you pass into the initializer. If you are planning on using ABSenderPort without an audio
+ > ABAudioSenderPort when initialized without an audio unit will create and publish its own audio unit with the
+ > AudioComponentDescription you pass into the initializer. If you are planning on using ABAudioSenderPort without an audio
  > unit (you're not passing an audio unit into the initializer), then you **must not** publish any other audio unit with
  > the same AudioComponentDescription. Otherwise, *two audio units will be published with the same AudioComponentDescription*, 
  > which would be bad, and would result in unexpected behaviour like silent output.
  > <br/>
- > If you're using ABSenderPort without an audio unit for the purposes of offering a new, separate audio stream
+ > If you're using ABAudioSenderPort without an audio unit for the purposes of offering a new, separate audio stream
  > with a different AudioComponentDescription, though, you're fine.
  
  > If you are using a sender port and *not* initialising it with your audio unit, you **must**
  > mute your app's corresponding audio output when needed, depending on the value of the
- > @link ABSenderPort::ABSenderPortIsMuted ABSenderPortIsMuted @endlink function. This is very important and
+ > @link ABAudioSenderPort::ABAudioSenderPortIsMuted ABAudioSenderPortIsMuted @endlink function. This is very important and
  > both avoids doubling up the audio signal, and lets your app go silent when removed from Audiobus. See the 
  > [Sender Port recipe](@ref Sender-Port-Recipe) and the AB Receiver sample app for details.
  
@@ -689,48 +716,44 @@
  AudioComponents entry you added earlier.
 
  @code
- ABSenderPort *sender = [[ABSenderPort alloc] initWithName:@"Audio Output"
-                                                     title:NSLocalizedString(@"Main App Output", @"")
-                                 audioComponentDescription:(AudioComponentDescription) {
-                                     .componentType = kAudioUnitType_RemoteGenerator,
-                                     .componentSubType = 'subt', // Note single quotes
-                                     .componentManufacturer = 'manu' }
-                                                 audioUnit:_audioUnit];
+ self.audioSenderPort = [[ABAudioSenderPort alloc] initWithName:@"Audio Output"
+                                                         title:NSLocalizedString(@"Main App Output", @"")
+                                     audioComponentDescription:(AudioComponentDescription) {
+                                         .componentType = kAudioUnitType_RemoteGenerator,
+                                         .componentSubType = 'subt', // Note single quotes
+                                         .componentManufacturer = 'manu' }
+                                                     audioUnit:_audioUnit];
  
- [_audiobusController addSenderPort:sender];
+ [self.audiobusController addAudioSenderPort:self.audioSenderPort];
  @endcode
  
  If your sender port's audio audio comes from the system audio input (such as a microphone),
- then you should set the port's @link ABSenderPort::derivedFromLiveAudioSource derivedFromLiveAudioSource @endlink
+ then you should set the port's @link ABAudioSenderPort::derivedFromLiveAudioSource derivedFromLiveAudioSource @endlink
  property to YES to allow Audiobus to be able to warn users if they are in danger of creating audio feedback.
  
- You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABSenderPort::icon) property, 
+ Please note that you should not split up stereo Audiobus streams into two separate channels,
+ treated differently. You should always treat audio from Audiobus as one, 2-channel stream.
+ 
+ You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABAudioSenderPort::icon) property, 
  which is also displayed to the user and can change dynamically. We strongly recommend providing icons if you
  publish more than one port, so these can be recognized from one another. If you provide an icon here, you should
  also add that icon to the port on your app's registry on our developer site, so it can be displayed to users
  prior to your app being launched.
 
- If you've already integrated Inter-App Audio separately, you should hide your IAA transport and
- app switching UI while connected with Audiobus. This is to avoid confusion with the Audiobus Connection Panel.
- You can determine when your app is connected specifically to Audiobus, and not Inter-App Audio alone, via
- ABAudiobusController's [audiobusConnected](@ref ABAudiobusController::audiobusConnected) property. Note that
- due to the asynchronous nature of Inter-App Audio connections within Audiobus when connected to peers using the 
- 2.1 Audiobus SDK or above, you may see the [connected](@ref ABAudiobusController::connected) and
- [interAppAudioConnected](@ref ABAudiobusController::interAppAudioConnected) properties change to YES before or
- after the [audiobusConnected](@ref ABAudiobusController::audiobusConnected) property, so you need to be prepared
- to adapt your UI to this environment.
- 
- Conversely, note that when your app's ABSenderPort is hosted within an Inter-App Audio-compatible
- app outside of Audiobus, you are responsible for implementing the appropriate transport and app switch UI if
- you choose to do so.
 
- @subsection Create-Filter-Port Filter Port
+ Audio Filter Port                                               {#Create-Audio-Filter-Port}
+ -----------------
  
- If you intend to filter audio, to act as an audio effect, then create an ABFilterPort.
+ If you intend to filter audio, to act as an audio effect, then create an ABAudioFilterPort.
 
- This process is very similar to [creating a sender port](@ref Create-Sender-Port). You need to create an
+ This process is very similar to [creating a sender port](@ref Create-Audio-Sender-Port). You need to create an
  Info.plist AudioComponents entry for your port, this time using 'aurx' as the type, which identifies the 
- port as a Remote Effect, or 'aurm' which identifies it as a Remote Music Effect.
+ port as a Remote Effect, or 'aurm' which identifies it as a Remote Music Effect capable of
+ [receiving MIDI](@ref Create-MIDI-Receiver-Port).
+ 
+ <blockquote class="alert">
+ If you create a port of Remote Instrument ('aurm') you need to make sure that your port is not receiving twice, one time via Inter-App audio and a second time via Core MIDI. To ensure that you must assign a block to the [enableReceivingCoreMIDIBlock](@ref ABAudiobusController::enableReceivingCoreMIDIBlock) property. Audiobus calls this block to tell your app exactly when to enable or disable receiving via Core MIDI. See [here](@ref Disable-Core-MIDI) for more details.
+ </blockquote>
 
  <blockquote class="alert">
  It's very important that you use a different AudioComponentDescription for each port (represented by the type, subtype
@@ -741,14 +764,16 @@
  but this is not a guarantee of uniqueness among non-Audiobus apps.
  </blockquote>
  
- Then you create an ABFilterPort instance, passing in the port name, for internal use, and a title for
+ Then you create an ABAudioFilterPort instance, passing in the port name, for internal use, and a title for
  display to the user.
 
  Again, you may provide your IO audio unit (of type kAudioUnitSubType_RemoteIO, with input enabled), which will cause 
- the filter to use your audio unit for processing. This is the easiest, most efficient and recommended approach.
+ the filter to use your audio unit for processing. This is the easiest, most efficient and recommended approach. As mentioned
+ above, if you are using the C Core Audio API, this will be your main output unit. If you are using AVAudioEngine, you can 
+ access this via AVAudioOutputNode/AVAudioInputNode's "audioUnit" property.
  
  @code
- self.filter = [[ABFilterPort alloc] initWithName:@"Main Effect"
+ self.filter = [[ABAudioFilterPort alloc] initWithName:@"Main Effect"
                                             title:@"Main Effect"
                         audioComponentDescription:(AudioComponentDescription) {
                             .componentType = kAudioUnitType_RemoteEffect,
@@ -756,15 +781,15 @@
                             .componentManufacturer = 'you!' }
                                         audioUnit:_ioUnit];
  
- [_audiobusController addFilterPort:_filter];
+ [self.audiobusController addFilterPort:_filter];
  @endcode
  
- Alternatively, if you have a good reason for not using your IO audio unit with the filter port, you can use ABFilterPort's
- @link ABFilterPort::initWithName:title:audioComponentDescription:processBlock:processBlockSize: process block initializer @endlink.
+ Alternatively, if you have a good reason for not using your IO audio unit with the filter port, you can use ABAudioFilterPort's
+ @link ABAudioFilterPort::initWithName:title:audioComponentDescription:processBlock:processBlockSize: process block initializer @endlink.
  This allows you to pass in a block to use for audio processing.
 
  @code
- self.filter = [[ABFilterPort alloc] initWithName:@"Main Effect"
+ self.filter = [[ABAudioFilterPort alloc] initWithName:@"Main Effect"
                                             title:@"Main Effect"
                         audioComponentDescription:(AudioComponentDescription) {
                             .componentType = kAudioUnitType_RemoteEffect,
@@ -779,106 +804,43 @@
  your app's normal audio output when the filter port is connected. See the 
  [Filter Port recipe](@ref Filter-Port-Recipe) for details.
  
- > ABFilterPort, when initialized with a filter block (instead of an audio unit) will create and publish its own audio unit with the
- > AudioComponentDescription you pass into the initializer. If you are planning on using ABFilterPort with a process block,
+ > ABAudioFilterPort, when initialized with a filter block (instead of an audio unit) will create and publish its own audio unit with the
+ > AudioComponentDescription you pass into the initializer. If you are planning on using ABAudioFilterPort with a process block,
  > instead of an audio unit, then you **must not** publish any other audio unit with
  > the same AudioComponentDescription. Otherwise, *two audio units will be published with the same AudioComponentDescription*,
  > which would be bad, and would result in unexpected behaviour like silent output.
  > <br/>
- > If you're using ABFilterPort with a filter block for the purposes of offering a new, separate audio processing
+ > If you're using ABAudioFilterPort with a filter block for the purposes of offering a new, separate audio processing
  > facility, separate from your published audio unit, and with a different AudioComponentDescription, though, you're fine.
 
- You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABFilterPort::icon) property, 
+ You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABAudioFilterPort::icon) property, 
  which is also displayed to the user and can change dynamically. We strongly recommend providing icons if you
  publish more than one port, so these can be recognized from one another. If you provide an icon here, you should
  also add that icon to the port on your app's registry on our developer site, so it can be displayed to users
  prior to your app being launched.
-
- If, outside of Audiobus, your app processes audio from the system audio input, and provides monitoring via the system
- output (it probably does!), we strongly suggest muting your app briefly when it's launched from Audiobus. This will avoid the
- case where the user experiences feedback in the second or so after your app is initialized, but before your app is 
- connected within Audiobus. Take a look at the AB Filter sample app for a demonstration of how this can be achieved,
- by checking to see if your app was launched via its Audiobus launch URL, and silencing the audio engine for the duration:
-
- @code
- @implementation MyAudioEngine
- -(id)init {
-     ...
-     [[NSNotificationCenter defaultCenter] addObserver:self 
-                                              selector:@selector(applicationDidFinishLaunching:) 
-                                                  name:UIApplicationDidFinishLaunchingNotification 
-                                                object:nil];
-     ...
- }
- ...
- -(void)dealloc {
-     ...
-     [[NSNotificationCenter defaultCenter] removeObserver:self];
-     ...
- }
- ...
- -(void)applicationDidFinishLaunching:(NSNotification*)notification {
-     if ( [[notification.userInfo[UIApplicationLaunchOptionsURLKey] scheme] hasSuffix:@".audiobus"] ) {
-         // If this effect app has been launched from within Audiobus, we need to silence our output for a little while
-         // to avoid feedback issues while the connection is established.
-         if ( !_audiobusController.connected ) {
-             // Mute
-             self.muted = YES;
  
-             // Set a timeout for three seconds, after which we can assume there's actually no
-             // Audiobus connection forthcoming (something went wrong), and we should unmute
-             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                 self.muted = NO;
-             });
-         }
-     }
- }
- ...
- -(void)portConnectionsChanged:(NSNotification*)notification {
-     if ( _muted ) {
-         // Unmute now if we were launched from Audiobus
-         self.muted = NO;
-     }
- }
- ...
- @end
- @endcode
+ Audio Receiver Port                           {#Create-Audio-Receiver-Port}
+ -------------------
+ 
+ If you intend to receive audio, then you create an ABAudioReceiverPort.
 
- If you've already integrated Inter-App Audio separately, you should hide your IAA transport and
- app switching UI while connected with Audiobus. This is to avoid confusion with the Audiobus Connection Panel.
- You can determine when your app is connected specifically to Audiobus, and not Inter-App Audio alone, via
- ABAudiobusController's [audiobusConnected](@ref ABAudiobusController::audiobusConnected) property. Note that
- due to the asynchronous nature of Inter-App Audio connections within Audiobus when connected to peers using the
- 2.1 Audiobus SDK or above, you may see the [connected](@ref ABAudiobusController::connected) and
- [interAppAudioConnected](@ref ABAudiobusController::interAppAudioConnected) properties change to YES before or
- after the [audiobusConnected](@ref ABAudiobusController::audiobusConnected) property, so you need to be prepared
- to adapt your UI to this environment.
- 
- Conversely, note that when your app's ABFilterPort is hosted within an Inter-App Audio-compatible
- app outside of Audiobus, you are responsible for implementing the appropriate transport and app switch UI if
- you choose to do so.
- 
- @subsection Create-Receiver-Port Receiver Port
- 
- If you intend to receive audio, then you create an ABReceiverPort.
-
- ABReceiverPort works slightly differently to ABSenderPort and ABFilterPort: it does not use an audio unit,
+ ABAudioReceiverPort works slightly differently to ABAudioSenderPort and ABAudioFilterPort: it does not use an audio unit,
  nor does it require an AudioComponentDescription. Instead, you call 
- @link ABReceiverPort::ABReceiverPortReceive ABReceiverPortReceive @endlink to receive audio.
+ @link ABAudioReceiverPort::ABAudioReceiverPortReceive ABAudioReceiverPortReceive @endlink to receive audio.
 
  First, create the receiver, and store it so you can use it to receive audio:
 
  @code
- @property (nonatomic, strong) ABReceiverPort *receiverPort;
+ @property (nonatomic, strong) ABAudioReceiverPort *receiverPort;
  @endcode
 
  @code
- self.receiverPort = [[ABReceiverPort alloc] initWithName:@"Audio Input"
+ self.receiverPort = [[ABAudioReceiverPort alloc] initWithName:@"Audio Input"
                                                     title:NSLocalizedString(@"Main App Input", @"")];
- [_audiobusController addReceiverPort:_receiverPort];
+ [self.audiobusController addReceiverPort:_receiverPort];
  @endcode
 
- Now set up the port's @link ABReceiverPort::clientFormat clientFormat @endlink property to whatever
+ Now set up the port's @link ABAudioReceiverPort::clientFormat clientFormat @endlink property to whatever
  PCM `AudioStreamBasicDescription` you are using (such as non-interleaved stereo floating-point PCM):
 
  @code
@@ -895,31 +857,36 @@
  _receiverPort.clientFormat = audioDescription;
  @endcode
  
- Now you may receive audio using @link ABReceiverPort::ABReceiverPortReceive ABReceiverPortReceive @endlink, 
+ Now you may receive audio using @link ABAudioReceiverPort::ABAudioReceiverPortReceive ABAudioReceiverPortReceive @endlink, 
  in a similar fashion to calling  `AudioUnitRender` on an audio unit. For example, within a Remote iO input 
  callback, you might write:
  
  @code
  AudioTimeStamp timestamp = *inTimeStamp;
- if ( ABReceiverPortIsConnected(self->_receiverPort) ) {
+ if ( ABAudioReceiverPortIsConnected(self->_receiverPort) ) {
     // Receive audio from Audiobus, if connected. Note that we also fetch the timestamp here, which is
     // useful for latency compensation, where appropriate.
-    ABReceiverPortReceive(self->_receiverPort, nil, ioData, inNumberFrames, &timestamp);
+    ABAudioReceiverPortReceive(self->_receiverPort, nil, ioData, inNumberFrames, &timestamp);
  } else {
     // Receive audio from system input otherwise
     AudioUnitRender(self->_audioUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, ioData);
  }
  @endcode
  
+ > Just as with `AudioUnitRender`, it's important to continually call
+ > @link ABAudioReceiverPort::ABAudioReceiverPortReceive ABAudioReceiverPortReceive @endlink once
+ > @link ABAudioReceiverPort::ABAudioReceiverPortIsConnected ABAudioReceiverPortIsConnected @endlink returns YES,
+ > even if you're not currently using the returned audio. If you don't do this, your app will not work correctly.
+ 
  > The receiver port assumes you provide monitoring - where you pass the incoming audio to the system output
  > so the user can hear it. If you do not do so, the user won't be able to hear any apps that send audio to
- > your app. If that's the case, ABReceiverPort provides an automatic monitoring facility for you: just set
- > @link ABReceiverPort::automaticMonitoring automaticMonitoring @endlink to YES to use it.
+ > your app. If that's the case, ABAudioReceiverPort provides an automatic monitoring facility for you: just set
+ > @link ABAudioReceiverPort::automaticMonitoring automaticMonitoring @endlink to YES to use it.
  
  See [The Receiver Port](@ref Receiver-Port) or the [Receiver Port recipe](@ref Receiver-Port-Recipe) for 
  more info on receiving.
  
- You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABReceiverPort::icon) property, 
+ You may also optionally provide an icon (a 32x32 mask, with transparency) via the [icon](@ref ABAudioReceiverPort::icon) property, 
  which is also displayed to the user and can change dynamically. We strongly recommend providing icons if you
  publish more than one port, so these can be recognized from one another. If you provide an icon here, you should
  also add that icon to the port on your app's registry on our developer site, so it can be displayed to users
@@ -927,8 +894,18 @@
  
  If you wish to receive multi-channel audio, with one audio stream for each connected app, see the section on
  [receiving separate streams](@ref Receiving-Separate-Streams).
-
- @subsection Update-Registry Update the Audiobus Registry
+ 
+ 
+ MIDI Ports
+ ----------
+ 
+ If you intend to work with MIDI in your app, you may wish to create some MIDI sender, filter or receiver ports as well. See [Working With MIDI](@ref Working-With-MIDI) for more information.
+ 
+ Note that if you only wish to respond to MIDI messages to generate audio, then you do not need to create a [MIDI receiver port](@ref Create-MIDI-Receiver-Port): you just need to specify a type of Remote Instrument ('auri') when creating an ABAudioSenderPort, and respond to MIDI messages via Inter-App Audio's [kAudioOutputUnitProperty_MIDICallbacks](https://developer.apple.com/library/content/samplecode/InterAppAudioSuite/Listings/InterAppAudioSampler_InterAppAudioSampler_Sampler_mm.html) mechanism. Audiobus will do the rest.
+ 
+ 
+ Update the Audiobus Registry                                {#Update-Registry}
+ ----------------------------
  
  Once you've set up your ports, open your [app page](https://developer.audiob.us/apps) on the Audiobus
  Developer Center and fill in any missing port details.
@@ -947,7 +924,86 @@
  > instances of the ABSender, ABFilter and ABReceiver ports. If you don't do this correctly, you will see
  > "Port Unavailable" messages within Audiobus when trying to use your app.
  
-@section Test 9. Test
+ > Once you have updated and saved the port information you will get a new API key.
+ > Copy this API key to your application. On the next launch the port configuration
+ > in your app is compared to the port information encoded in the API key. If
+ > mismatches are detected detailed error messages are printed to the console.
+ > Check this to find out if anything is wrong with your port registration.
+ 
+ 
+ 
+9. Show and hide Inter-App Audio Transport Panel {#Show-and-hide-Inter-App-Audio-Transport-Panel}
+=======
+
+ If your app shows an Inter-App Audio transport panel, you will need to hide it while
+ participating in an Audiobus session. To do so, assign a block to the property 
+ [showInterAppAudioTransportPanelBlock](@ref ABAudiobusController::showInterAppAudioTransportPanelBlock)
+ of your ABAudiobusController instance. Within the block you need to show or hide your Inter-App Audio Transport
+ panel accordingly:
+ 
+ @code
+    _audiobusController.showInterAppAudioTransportPanelBlock = ^(BOOL showIAAPanel) {
+        if ( showIAAPanel ) {
+           // TODO: Show Inter-App Audio Transport Panel
+        } else {
+           // TODO: Hide Inter-App Audio Transport Panel
+        }
+    };
+ @endcode
+ 
+ 
+ 
+10. If your app is an IAA host, do not show Audiobus' hidden sender ports  {#Dont-show-Audiobus-hidden-sender-ports}
+=======
+  Audiobus provides a number of intermediate sender ports. These ports are 
+  only used internally by the Audiobus SDK. If your app is an IAA host (like a multitrack recorder or any sort of recording app) you should
+  hide these ports in the list of available Inter-App audio nodes. To check 
+  if an audio component description belongs to a hidden Audiobus sender port, 
+  you can use the following function declared in ABCommon.h:
+ @code
+   BOOL ABIsHiddenAudiobusPort(AudioComponentDescription audioComponentDescription);
+ @endcode
+ 
+  Here is a code fragment showing how an Inter-App audio port list can be generated
+  that does not contain the hidden Audiobus intermediate ports:
+ 
+ @code
+ - (void) refreshAUList {
+    [_publishedInstruments removeAllObjects];
+    
+    AudioComponentDescription searchDesc = { 0, 0, 0, 0, 0 };
+    AudioComponent comp = NULL;
+    while (true) {
+        comp = AudioComponentFindNext(comp, &searchDesc);
+        if (comp == NULL) break;
+        
+        AudioComponentDescription desc;
+        if (AudioComponentGetDescription(comp, &desc)) continue;
+ 
+ 
+        //Ignore hidden Audiobus Inter-App Audio nodes
+        if(ABIsHiddenAudiobusPort(desc)) continue;
+        
+        //Fill list of other Inter-App audio nodes
+        if (desc.componentType == kAudioUnitType_RemoteInstrument ||
+            desc.componentType == kAudioUnitType_RemoteGenerator ) {
+            RemoteAU *rau = [[RemoteAU alloc] init];
+            rau->_desc = desc;
+            rau->_comp = comp;
+            rau->_image = [AudioComponentGetIcon(comp, 32) retain];
+            AudioComponentCopyName(comp, (CFStringRef *)&rau->_name);
+            [_publishedInstruments addObject: rau];
+        }
+    }
+  }
+ 
+ @endcode
+ 
+ 
+ 
+ 
+11. Test        {#Test}
+=======
  
  To test your app with Audiobus, you'll need the Audiobus app (https://audiob.us/download).
  
@@ -957,7 +1013,8 @@
  <blockquote class="alert">We reserve the right to **ban your app** from the Compatible Apps listing or even from
  Audiobus entirely, if it does not work correctly with Audiobus. It's critical that you test your app properly.</blockquote>
  
-@section Go-Live 10. Go Live
+12. Go Live        {#Go-Live}
+===========
  
  <blockquote class="alert">Before you submit your app to the App Store, please ensure the details of your registration at
  the [apps page](https://developer.audiob.us/apps) are correct. If not, users may experience unexpected behaviour. The 
@@ -975,7 +1032,8 @@
  > If you forget this step, potential new users will never find your app through our app directories,
  > losing you sales!
  
-@section Youre-Done You're Done!
+You're Done!        {#Youre-Done}
+============
 
  Unless you want to do more advanced stuff, that's it, you're done. Run your app, open the
  Audiobus app, and you should see your app appear in the appropriate port picker in the Audiobus app,
@@ -997,17 +1055,17 @@
  important to make correct use of audio timestamps so Audiobus's latency compensation works
  properly in your app and those your app connects to.
  
- Please note that you should not split up stereo Audiobus streams into two separate channels,
- treated differently. You should always treat audio from Audiobus as one, 2-channel stream.
+ If you are interested in handling MIDI in your app, read [Working With MIDI](@ref Working-With-MIDI)
+ for more information.
 
- If your app provides both an ABSenderPort and an ABReceiverPort, you may wish to allow users to 
+ If your app provides both an ABAudioSenderPort and an ABAudioReceiverPort, you may wish to allow users to 
  connect your app's output back to its input. If your app supports this kind of functionality, you can set the 
  @link ABAudiobusController::allowsConnectionsToSelf allowsConnectionsToSelf @endlink
  property to YES, and select the "Allows Connections To Self" checkbox on the app details
  page at [developer.audiob.us](https://developer.audiob.us/apps), once you've ensured that your app doesn't
  exhibit feedback issues in this configuration. See the documentation for
- @link ABSenderPort::ABSenderPortIsConnectedToSelf ABSenderPortIsConnectedToSelf @endlink
- /@link ABReceiverPort::ABReceiverPortIsConnectedToSelf ABReceiverPortIsConnectedToSelf @endlink for discussion,
+ @link ABAudioSenderPort::ABAudioSenderPortIsConnectedToSelf ABAudioSenderPortIsConnectedToSelf @endlink
+ /@link ABAudioReceiverPort::ABAudioReceiverPortIsConnectedToSelf ABAudioReceiverPortIsConnectedToSelf @endlink for discussion,
  and the AB Receiver sample app for a demonstration.
  
  If you'd like to make your app more interactive, you can implement [triggers](@ref Triggers) that
@@ -1018,213 +1076,679 @@
  synchronization with other apps. The Audiobus SDK automatically supports Link, and will enable it within
  your app when it's connected to Audiobus. There's nothing you need to do but include the Link SDK within
  your app.
+ 
+ The Audiobus app has a "Diagnostic Mode" setting in its System Preferences section.
+ Developer mode makes Audiobus print additional information to the console.
+ This can be helpful in case you're encountering problems with Audiobus.
 
  Finally, tell your users that you support Audiobus! We provide a set of graphical resources
  you can use on your site and in other promotional material. Take a look at
  the [resources page](https://developer.audiob.us/resources) for the details.
 
- Read on if you want to know about more advanced uses of Audiobus, such as multi-track
+ Read on if you want to know about more advanced uses of Audiobus, such as [MIDI](@ref Working-With-MIDI), multi-track
  [receiving](@ref Receiver-Port), [triggers](@ref Triggers), or [state saving](@ref State-Saving).
-
-@page Migration-Guide 1.x-2.x Migration Guide
  
- This section is intended for developers who are already familiar with the 1.x version of the Audiobus SDK,
- who wish to update their apps to the 2.x version. It explains what's changed, and what you need to do to migrate.
-
- Note that for technical reasons the 2.x SDK is supported on iOS 7.0 and up only.
-
- @section Migration-Guide-Version Create New Version On Our Registry
  
- Before you begin your migration, you should create a new version of your app on our 
- [developer site](https://developer.audiob.us/apps). Make sure you select the correct Audiobus SDK version on the
- form: this will allow Audiobus on iOS 8 to recognize your app as compatible. Also make sure you're using a new,
- unique launch URL: this is how Audiobus will recognize the iOS 8-compatible version of your app.
+@page Working-With-MIDI Working with MIDI
  
- You'll also notice the new "Ports" section, replacing the "Has Input/Filter/Output Port" checkboxes. This allows
- your app to advertise multiple ports, ahead of launch time. **It's important to fill this section out correctly**,
- matching the "Name", and the new type, subtype and manufacturer fields, to the values you're using with your
- ports (see below for more details on the new Audiobus ports). If these fields are incorrect, you'll see
- "Port Unavailable" messages in Audiobus when trying to use your app.
+ From version 3, Audiobus supports sending, filtering and receiving MIDI messages. This section explains how
+ to get up and running with MIDI.
  
- > If you don't perform this step, your app won't appear in Audiobus.
+ If you have not done so yet, read the [Integration Guide](@ref Integration-Guide), which describes how to get started
+ with the Audiobus SDK.
  
- When your app's update has gone live on the App Store, remember to mark this version as live, too, so we
- can report that your app supports iOS 8.
+ 1. Create a Regular Audio App   {#Working-With-MIDI-Create-an-ordinary-audio-app}
+ ===============================
  
- @section Migration-Guide-IAA Inter-App Audio
+ Whether your MIDI app is a synthesizer, or a controller that produces no audio of
+ its own, your app needs to have an audio engine. This is because:
+ 
+ 1. In order to receive MIDI in the background, your app needs to stay active
+    in the background. This is only possible if your app has a running audio engine.
+ 2. Audiobus launches apps into the background via Inter-App Audio, which is only possible
+    if your app provides an Inter-App Audio component.
+ 
+ Consequently, the first step is to follow the @ref Integration-Guide "Integration Guide"
+ and create a regular audio app, consisting of at least one [audio sender port](@ref Create-Audio-Sender-Port).
+ 
+ 2. Create MIDI Ports                            {#MIDI-Integration-Add-MIDI-Ports}
+ ====================
 
- Audiobus now integrates Apple's Inter-App Audio system for audio communication. For users, this makes little
- functional difference aside from improved latency. For developers, integrating the Audiobus SDK automatically
- gives your app the ability to work with other Inter-App Audio hosts, outside of Audiobus.
+ Now you're ready to create your Audiobus MIDI ports. You can create as many MIDI 
+ ports as you like. For example, a multi timbral synth could offer one MIDI
+ receiver port for each timbre: SoundPrism Link Edition offers three
+ MIDI receiver ports, one for the bass synth, one for the chord synth and one 
+ for the lead synth. A multi keyboard app could provide one MIDI 
+ sender port for each keyboard.
+ 
+ 
+ MIDI Sender Port                                              {#Create-MIDI-Sender-Port}
+ ----------------
+ Apps which offer MIDI Sender Ports appear in the "INPUTS" slots of the Audiobus MIDI page.
+ If your app intends to send MIDI to other apps you need to create an instance
+ of ABMIDISenderPort. The first MIDI sender port you define will be the one that 
+ Audiobus will connect to when the user taps your app in the port picker on 
+ the MIDI page in Audiobus, so it's best to define the port with the most
+ general default behaviour first.
+ 
+ The instantiation of a MIDI sender port is quite simple:
+ 
+ @code
+ self.MIDISenderPort =
+    [[ABMIDISenderPort alloc] initWithName:@"MIDISend"
+                                     title:@"MIDI Sender"];
+ @endcode
+ 
+ Like all other ports the new MIDI sender port needs to be added to the Audiobus
+ controller:
+ 
+ @code
+ [self.audiobusController addMIDISenderPort:self.MIDISenderPort];
+ @endcode
+ 
+ 
+ MIDI can now be sent using [ABMIDIPortSendPacketList](@ref ABMIDIPort::ABMIDIPortSendPacketList), like this:
+ 
+ @code
+ ABMIDIPortSendPacketList(_MIDISenderPort, packetList);
+ @endcode
+ 
+ 
+ 
+ A working example of this code can be found within our AB Sender sample app.
+ AB Sender is able to send MIDI notes you play on the local keyboard.
+ 
+ 
+ MIDI Filter Port                                              {#Create-MIDI-Filter-Port}
+ ----------------
+ 
+ Apps that have MIDI Filter Ports appear in the "Effects" slots of the Audiobus 
+ MIDI page. A MIDI filter port is instantiated with a name and a title, and with a block which is called
+ when MIDI messages arrive. The task of the block is to modify and forward the processed MIDI data using
+ [ABMIDIPortSendPacketList](@ref ABMIDIPort::ABMIDIPortSendPacketList):
+ 
+ @code
+    self.MIDIFilterPort
+    = [[ABMIDIFilterPort alloc] initWithName:@"Transpose"
+                                       title:@"Transpose"
+                               receiverBlock:^(__unsafe_unretained ABPort * filterPort,
+                                               const MIDIPacketList * packetList) {
+       // TODO:
+       // 1. Copy the packet list,
+       // 2. Change events in the copied packet list
+       // 3. Send the copied and changed packet list again using 
+       //    ABMIDIPortSendPacketList
+    }];
+ @endcode
+ 
+ Like all other ports the new MIDI filter port needs to be added to the Audiobus
+ controller:
+ 
+ @code
+ [self.audiobusController addMIDIFilterPort:self.MIDIFilterPort];
+ @endcode
+ 
+ > Filter MIDI events by copying the original MIDI packet list. Change the 
+ > MIDI events that are relevant to your filter. All other MIDI events should
+ > remain unchanged in the processed list.
+ 
+ > The receiverBlock is called from a realtime MIDI receive thread,
+ > so be careful not to do anything that could cause priority inversion,
+ > like calling Objective-C, allocating memory, or holding locks.
+ 
+ 
+ 
+ MIDI Receiver Port                                            {#Create-MIDI-Receiver-Port}
+ ------------------
+ 
+ Apps that have MIDI receiver ports appear in the "Outputs" slots of the Audiobus
+ MIDI page.
+ 
+ > If your app is already an Inter-App Audio instrument (your sender port has type '`auri`') or an 
+ > Inter-App Audio music effect (your filter port has type '`aurm`'), you don't need to implement 
+ > a MIDI receiver port. Audiobus will show your app in the "Outputs" slot and provide your app with MIDI
+ > via Inter-App Audio.
+ 
+ > If you manually create at least one ABMIDIReceiverPort instance, then Audiobus will not send
+ > any MIDI via Inter-App Audio to your app. All MIDI will be sent via the
+ > receiver port instead.
+ 
+ A MIDI receiver port is instantiated with a name and a title, and with a block which is called when
+ MIDI messages arrive.
+ 
+ @code
+    self.MIDIReceiver
+    = [[ABMIDIReceiverPort alloc] initWithName:@"MIDIReceive"
+                                         title:@"MIDIReceive"
+                                receiverBlock:^(__unsafe_unretained ABPort * receiverPort,
+                                                const MIDIPacketList * packetList) {
+        // TODO: Process the received MIDI here
+    }];
+ @endcode
+ 
+ Like all other ports the new MIDI receiver port needs to be added to the Audiobus
+ controller:
+ 
+ @code
+ [self.audiobusController addMIDIReceiverPort:self.MIDIReceiver];
+ @endcode
+ 
+ > The receiverBlock is called from a realtime MIDI receive thread,
+ > so be careful not to do anything that could cause priority inversion,
+ > like calling Objective-C, allocating memory, or holding locks.
+ 
+ 
+ Multi-instance MIDI Ports {#Multi-instance-MIDI-Ports}
+ ------------------------------------------------------
+ 
+ Audiobus' Multi-instance MIDI ports feature allows you to create
+ new MIDI ports on demand. Here are some examples where Multi-instance ports are 
+ useful:
+ 
+ - **Multitrack MIDI recorder apps**: Each time your MIDI recorder
+   is added to an Audiobus MIDI connection pipeline a new instance of a MIDI
+   receiver port is created automatically. MIDI events received on different 
+   dynamically created MIDI receiver ports are stored on different tracks.
+ 
+ - **Multi-Keyboard apps**: Each time the Multi-Keyboard app is added to a connection
+   pipeline a new MIDI sender port instance is created. The multi keyboard app
+   creates a new keyboard UI for each port instance.
+ 
+ - **Multi-MIDI-Effect-Racks**: Add a MIDI effect to multiple connection pipelines at the
+   same time. Receive and process and filter the MIDI streams of these pipelines
+   separately. The AB MIDI Filter sample app does this: Each time it is added 
+   to a connection pipeline a new channel strip is added allowing to transpose
+   the connected stream.
+ 
+ All three port types, ABMIDISenderPort, ABMIDIFilterPort as well ABMIDIReceiverPort
+ can be configured as Multi-instance ports.
+ The following example shows how this is done for a MIDI filter port. The code
+ samples are taken from the AB MIDI Filter sample app.
+ 
+ To prevent a retain cycle we create a weak reference to self first:
+ 
+ @code
+ __weak ABMIDIFilterAudioEngine * weakSelf = self;
+ @endcode
+ 
+ A multi-instance MIDI filter port is instantiated with four parameters:
+ a `name`, a `title` an `instanceConnectedBlock` and an `instanceDisconnectedBlock`.
+ The first block is called each time the filter port is added to an connection pipeline,
+ the second each time the filter port is removed from an connection pipeline:
+ 
+ @code
+ self.MIDIFilterPort = [[ABMIDIFilterPort alloc]
+    initWithName:@"Transpose" title:@"Transpose"
 
- Audiobus' IAA integration works alongside existing IAA integrations, so there should be no conflicts as long as
- you heed the following guidelines:
+    // React to creation of a new port instance
+    instanceConnectedBlock:^(ABMIDIPort * instance) {
+       [weakSelf portInstanceAdded:(ABMIDIFilterPort *)instance];
+    }
 
- - Where possible, always use the audio unit initialisers for ABSenderPort and ABFilterPort -
-   @link ABSenderPort::initWithName:title:audioComponentDescription:audioUnit: ABSenderPort's initWithName:title:audioComponentDescription:audioUnit: @endlink and
-   @link ABFilterPort::initWithName:title:audioComponentDescription:audioUnit: ABFilterPort's initWithName:title:audioComponentDescription:audioUnit: @endlink.
-   This will cause the ports to use your own audio units for generating or processing audio, which is both more efficient and most
-   compatible with current IAA integrations.
- - If you must use the other, non-audio unit initialisers, you must either use a different AudioComponentDescription,
-   or you must avoid publishing your own audio unit. Otherwise, both your own audio unit and the port's internal
-   unit will be published with the same AudioComponentDescription, resulting in unexpected behaviour like silent output.
+    // React to disposing of an additional instance
+    instanceDisconnectedBlock:^(ABMIDIPort * instance) {
+       [weakSelf portInstanceRemoved:(ABMIDIFilterPort *)instance];
+    }];
+ @endcode
+ 
+ The `instanceConnectedBlock` calls the selector `portInstanceAdded:` which
+ adds a MIDI receiver callback to the automatically created filter port 
+ instance and informs the UI about the new port:
+ 
+ @code
+ - (void)portInstanceAdded:(ABMIDIFilterPort*)filterPort {
+    
+    // Assign a receiver block to the newly created filter port
+    filterPort.MIDIReceiverBlock
+        = ^(__unsafe_unretained ABPort * port, const MIDIPacketList * inMIDI) {
+            // Perform MIDI processing here
+        };
+ 
+    // Update UI for added port, etc.
+}
+ @endcode
+ 
+ The `instanceDisconnectedBlock` calls the selector `portInstanceRemoved:` which
+ simply informs the UI about the change.
+ 
+ @code
+ - (void)portInstanceRemoved:(ABMIDIFilterPort*)filterPort  {
+    // Update UI for removed port, etc.
+ }
+ @endcode
+ 
+ To configure a port as a Multi-instance port, you need to flag it as such in the 
+ [Audiobus registry](https://developer.audiob.us/apps) by ticking the "Multi-instance"
+ checkbox beside the port entry.
+ 
+ 
+ 3. Avoid double notes by disabling Core MIDI when necessary  {#Disable-Core-MIDI}
+ ===========================================================
+ 
+ Audiobus 3's MIDI routing operates independently of Core MIDI, allowing users to set up
+ particular MIDI routings. However, Core MIDI knows nothing about Audiobus, and consequently
+ there are certain situations -- particularly when MIDI hardware is involved -- that can result
+ in a double routing, causing incoming MIDI events to be doubled up.
+ 
+ These double routings are very obscure and difficult for inexperienced users to understand
+ and diagnose. Consequently, in order to avoid double notes and other problems, it's very important to disable
+ receiving and sending MIDI via Core MIDI in your app when your app's part of an Audiobus session.
+ 
+ The following figure shows examples for when receiving Core MIDI should be disabled.
+ A MIDI source (such as a MIDI keyboard) is connected to your iOS device.
+ Audiobus 3 will receive the MIDI events, route them through any connected MIDI effects
+ and then forward them to your app. At the same time your app is also
+ listening via Core MIDI to the connected keyboard: this causes the MIDI event to be
+ received twice by your app – both from Audiobus and via Core MIDI.
+ 
+ <img src="disableReceivingCoreMIDI.png" width="570" title="Core MIDI double routings" />
  
  <blockquote class="alert">
- It's very important that you use a different AudioComponentDescription for each port (represented by the type, subtype
- and manufacturer fields). If you don't have a unique AudioComponentDescription per port, you'll get all sorts of
- Inter-App Audio errors (like error -66750 or -10879).
+ If you don't stop sending to other destinations via Core MIDI
+ these destinations will receive MIDI notes twice, from your app as well Audiobus.
  
- The Audiobus Developer Center will check that your AudioComponentDescriptions are unique among the Audiobus community,
- but this is not a guarantee of uniqueness among non-Audiobus apps.
+ If you don't stop receiving from other sources via Core MIDI
+ your app will receive MIDI notes twice, from your app and Audiobus.
  </blockquote>
  
- Additionally, the new SDK remains fully backwards-compatible with apps using the 1.x version of the Audiobus
- SDK, on iOS 7.
-
- With the new IAA integration, your app needs to have Inter-App Audio enabled, and each
- sender port and filter port needs to have a corresponding entry in an "AudioComponents" section within your app's 
- Info.plist. Take a look at the [audio setup](@ref Audio-Setup) and [ports](@ref Create-Ports) sections of the 
- integration guide for details.
-
- If you've already integrated Inter-App Audio separately, you should hide your IAA transport and
- app switching UI while connected with Audiobus. This is to avoid confusion with the Audiobus Connection Panel.
- Conversely, note that when your app's ABSenderPort or ABFilterPort is hosted within an Inter-App Audio-compatible
- app outside of Audiobus, you are responsible for implementing the appropriate transport and app switch UI if you
- choose to do so.
  
- Note that, prior to the 2.1 Audiobus SDK, you could create and remove sender or filter ports dynamically, as needed.
- Now, as we're using Inter-App Audio under the hood, they need to be all created at startup, or you'll see some weird
- behaviour. If you've got a number of ports that you don't always need (for example, for multi-track playback), create
- them at startup and keep them silent until you need them.
-
- @section Migration-Guide-State-Saving State Saving
-
- A new feature of Audiobus 2.x is presets and state saving, allowing Audiobus to save state from every connected
- app as part of a preset, and recall it later. This lets users store and recall their entire workspace, as well
- as sharing their workspaces with others.
-
- Take a look at the [state saving](@ref State-Saving) documentation, and the
- @link ABAudiobusControllerStateIODelegate @endlink protocol for details.
+ To prevent such double routings, ABAudiobusController provides two properties, [enableReceivingCoreMIDIBlock](@ref ABAudiobusController::enableReceivingCoreMIDIBlock)
+ and [enableSendingCoreMIDIBlock](@ref ABAudiobusController::enableSendingCoreMIDIBlock).
+ <ul>
+ <li>If your app has at least one MIDI receiver port (Audiobus or Inter-App Audio)</li>
+ you must assign a block to [enableReceivingCoreMIDIBlock](@ref ABAudiobusController::enableReceivingCoreMIDIBlock).
+ <li>If your app has at least one MIDI sender port, you must assign a block to
+ [enableSendingCoreMIDIBlock](@ref ABAudiobusController::enableSendingCoreMIDIBlock).</li>
+ </ul>
  
- @section Migration-Guide-Controller The Audiobus Controller
-
- ABAudiobusController's initialization has been simplified a bit - the launchURL parameter has been removed in
- favour of automatically finding this in your app's Info.plist.
  
- @section Migration-Guide-Ports Ports
-
- A number of changes have been made to Audiobus' ports. Firstly, ABInputPort and ABOutputPort have been renamed
- to ABReceiverPort and ABSenderPort in order to clarify their function.
-
- Ports are now created by allocing and initializing them, then using ABAudiobusController's addSenderPort:,
- addFilterPort: and addReceiverPort: methods. ABSenderPort and ABFilterPort's initializers now take an
- AudioComponentDescription parameter that identifies the corresponding Inter-App Audio node.
-
- The Audio Unit Wrapper (ABAudiobusAudioUnitWrapper) is no more, instead replaced by functionality within the
- ports themselves. Now, you pass your audio unit in via the ABSenderPort/ABFilterPort initializer.
+ For example:
  
- We've improved support for having multiple ports, and encourage you to make use of this functionality. Now, all
- your app's ports can be registered at our Developer Center, allowing Audiobus to be aware of your extra ports before
- your app is running.
+ @code
+ _audiobusController.enableReceivingCoreMIDIBlock = ^(BOOL receivingEnabled) {
+     if ( receivingEnabled ) {
+         // TODO: Core MIDI RECEIVING needs to be enabled
+     } else {
+         // TODO: Core MIDI RECEIVING needs to be disabled
+     }
+ };
  
- > It's important that you fill in the new "Ports" section correctly, matching the values you are using with your
- > instances of the ABSender, ABFilter and ABReceiver ports. If you don't do this correctly, you will see
+ _audiobusController.enableSendingCoreMIDIBlock = ^(BOOL sendingEnabled) {
+     if ( sendingEnabled ) {
+         // TODO: Core MIDI SENDING needs to be enabled
+     } else {
+         // TODO: Core MIDI SENDING needs to be disabled
+     }
+ };
+ @endcode
+ 
+ 4. Update Audiobus Registry               {#MIDI-Update-Audiobus-Registry}
+ ===========================
+ 
+ Just like audio ports, MIDI ports need to be registered with the Audiobus registry.
+ Once you've set up your MIDI ports, open your [app page](https://developer.audiob.us/apps) on the Audiobus
+ Developer Center and fill in any missing port details.
+ 
+ Filling in the port details here allows all for your app's ports to be seen
+ within Audiobus prior to your app being launched.
+ 
+ If your app is MIDI only (i.e. it does not produce audio on its own), then you should hide your audio sender port so that it does not appear within Audiobus. To do so, check the "Hidden" checkbox on the Audiobus registry beside your audio ports.
+ 
+ > It's important that you fill in the "Ports" section correctly,
+ > matching the values you are using with your instances of the ABMIDISender,
+ > ABMIDIFilter and ABMIDIReceiver ports. If you don't do this correctly, you will see
  > "Port Unavailable" messages within Audiobus when trying to use your app.
-
- @subsection Migration-Guide-Sender Sender ports
-
- ABOutputPort is now called ABSenderPort.
-
- If you're using ABSenderPort without the audio unit initializer, and are thus calling
- @link ABSenderPort::ABSenderPortSend ABSenderPortSend @endlink manually, you need to check 
- @link ABSenderPort::ABSenderPortIsMuted ABSenderPortIsMuted @endlink, and mute your audio if the return
- value is YES (like you used to with `(ABOutputPortGetConnectedPortAttributes() & ABInputPortAttributePlaysLiveAudio)`).
  
- ABSenderPort adds a new property, @link ABSenderPort::derivedFromLiveAudioSource derivedFromLiveAudioSource @endlink,
- which you can use to indicate that your port's audio comes from the system audio input (such as a microphone). If
- so, you should set this property to YES to allow Audiobus to be able to warn users if they are in danger of creating
- feedback.
-
- @subsection Migration-Guide-Filter Filter ports
-
- ABFilterPort is much easier to use now, with an audio unit initializer that lets you use your normal audio 
- system with no further coding required. You also don't need to do monitoring via ABFilterPortGetOutput any more.
+ > Once you have updated and saved the port information you will receive a new API key.
+ > Copy this API key to your application. On the next launch the port configuration
+ > in your app is compared to the port information encoded in the API key. If
+ > mismatches are detected detailed error messages are printed to the console.
+ > Check it to find out if anything is wrong with your port registration.
  
- Filter ports can now work as senders and receivers, too, meaning they can appear in the "Input" and "Output"
- positions within Audiobus. That means you no longer need to implement sender and/or receiver ports in addition
- to filter ports, if you want your app to work in these positions.
-
- @subsection Migration-Guide-Receiver Receiver ports
-
- ABInputPort is now called ABReceiverPort.
-
- ABReceiverPort is now used by calling @link ABReceiverPort::ABReceiverPortReceive ABReceiverPortReceive @endlink
- directly; take a look at the [receiver port recipe](@ref Receiver-Port-Recipe) for an example, or read through
- the updated [integration guide section on the receiver port](@ref Create-Receiver-Port).
-
- Port attributes have been removed - you no longer need to set the 'PlaysLiveAudio' attribute to inform sources
- that your receiver app is doing monitoring. That's because we now assume you will always provide monitoring when
- connected, which is generally a safe bet. If for some reason you don't have audio monitoring built in - such as
- in the case of guitar tuner apps, etc - you can set ABReceiverPort's 
- @link ABReceiverPort::automaticMonitoring automaticMonitoring @endlink property to YES, and ABReceiverPort will
- do the monitoring for you.
-
- The live/lossless audio streams have been replaced with one audio stream type, which is automatically
- latency-adjusted and error-corrected when receiving from sources outside of the new Inter-App Audio system.
- This means receiving and recording is much simpler - you now no longer need to think about live vs lossless.
-
- The "allowsMultipleInstancesInConnectionGraph" property has been renamed to
- @link ABAudiobusController::allowsConnectionsToSelf allowsConnectionsToSelf @endlink to clarify its purpose,
- and @link ABSenderPort::ABSenderPortIsConnectedToSelf ABSenderPortIsConnectedToSelf @endlink
- /@link ABReceiverPort::ABReceiverPortIsConnectedToSelf ABReceiverPortIsConnectedToSelf @endlink functions have
- been added to determine when a port is connected to another port from the same app. Check out the discussion on
- the documentation for those methods, and the AB Receiver sample app for details.
  
- @section Migration-Guide-Lifecycle Lifecycle
-
- We've added a new key-value-observable property to ABAudiobusController,
- @link ABAudiobusController::memberOfActiveAudiobusSession memberOfActiveAudiobusSession @endlink, which lets you 
- determine whether your app is currently part of an active Audiobus session (i.e. your app's been used with Audiobus,
- and the Audiobus app is still running), and we've updated our recommended app lifecycle policy. We now recommend
- that you keep your app running in the background whenever (a) your app is 
- [connected](@ref ABAudiobusController::connected), or (b) part of an Audiobus session, and only allow the app to suspend
- (by stopping your audio engine) once the session ends. This keeps your app alive and responsive to
- connection changes while the Audiobus session is active.
-
- Take a look at the [Lifecycle](@ref Lifecycle) section of the integration guide, and the
- [Lifecycle recipe](@ref Lifecycle-Recipe) or the sample apps for some code examples.
+ 5. Be a Good MIDI Citizen          {#Be-A-Good-MIDI-Citizen}
+ =========================
  
- @section Migration-Guide-Triggers Triggers
-
- Triggers have not changed substantially, although the triggerWithTitle:icon:block: method of ABTrigger has
- been deprecated, in favour of the 
- @link ABButtonTrigger::buttonTriggerWithTitle:icon:block: buttonTriggerWithTitle:icon:block: @endlink
- factory method on the new ABButtonTrigger class.
- Take a look at the [triggers section](@ref Triggers) for details.
+ There are a few extra steps you need to take in order to make sure your app functions 
+ correctly:
  
- @section Migration-Guide-Sample-Apps Sample Apps
+ - Hide your audio sender ports if your app is a pure MIDI app
+ - Avoid double notes by [disabling Core MIDI when necessary](@ref Disable-Core-MIDI).
+ - Avoid note soup with a filtered MIDI stream by [respecting Local On/Off](@ref Local-On-Off).
+ - [Mute your internal sound engine](@ref Mute-Internal-Sound-Engine) when acting as a MIDI controller.
+ 
+ Here's how:
+ 
+ 
+ Hide your audio sender ports if your app is a pure MIDI app  {#Hide-your-sender-ports}
+ -----------------------------------------------------------
+ 
+ If your app is a pure MIDI app you need to hide your Audio Sender port. Otherwise
+ it will be shown in the Audio input port picker list. Here's how to do that:
+ 
+ <ol>
+ <li> Visit your app at http://developer.audiob.us/apps, scroll down to the port list, and
+ check the "Hidden" checkbox right below your audio sender port.</li>
+ <li> After instantiating your audio sender port set the isHidden property:
+ @code
+ ABPort *audioSenderPort = [[ABAudioSenderPort alloc] initWithName:...];
+ audioSenderPort.isHidden = YES;
+ @endcode
+ </li>
+ </ol>
+ 
+ Sample code for a hidden port can be found in the file ABMIDIFilterAuidoEngine.m
+ in the Audiobus 3 SDK.
+ 
+ 
+ 
+ 
+ Avoid note soup by respecting Local On/Off         {#Local-On-Off}
+ ------------------------------------------
+ 
+ This section applies to you if your app sends MIDI (via ABMIDISenderPort), and also receives MIDI (either via
+ ABMIDIReceiverPort or via Inter-App Audio via ABAudioSenderPort with a "Remote Instrument" 
+ 'auri' type).  A synth app that also behaves as a MIDI controller falls into this category, for example.
+ 
+ Audiobus allows users to create connection pipelines where MIDI events generated
+ by an app are routed through an effect and then back to the original app:
+ 
+ <img src="localOff2.png" width="692" height="309" title="A typical Local Off scenario" />
+ 
+ In this scenario, a synth app is expected to generate audio based on the modified MIDI
+ events coming from the Audiobus chain, *and not local MIDI events originating from the app*.
+ 
+ If your app incorrectly responds to both the local MIDI events *and* those coming from the Audiobus signal chain,
+ then your users are likely to experience double notes and other unexpected behaviour, as your app
+ receives MIDI events twice.
+ 
+ To avoid this situation, ABMIDISenderPort provides a property called
+ [localOn](@ref ABMIDISenderPort::localOn). When the value of this property is YES, your app
+ should respond to local events as normal, as well as any events coming from Audiobus. However, 
+ when the value of `localOn` is NO, it's important that your app *only respond to MIDI events coming
+ from Audiobus*.
+ 
+ To respond to changes in `localOn`, observe the property of your ABMIDISenderPort instance
+ and respond appropriately when changes occur:
+ 
+ @code
+ void *kMIDIPortLocalOnChanged = &kMIDIPortLocalOnChanged;
+ 
+ ...
 
- There are four brand new sample apps contained within the Audiobus SDK distribution.
+ [self.MIDISenderPort addObserver:self
+                       forKeyPath:@"localOn"
+                          options:0
+                          context:kMIDIPortLocalOnChanged];
+ 
+ ...
+ 
+ -(void)observeValueForKeyPath:(NSString *)keyPath
+                         ofObject:(id)object
+                           change:(NSDictionary *)change
+                          context:(void *)context {
+     if ( context == kMIDIPortLocalOnChanged ) {
+         if ( self.MIDISenderPort.localOn ) {
+             // Internal sound engine should respond to both internal MIDI events and
+             // those coming from Audiobus
+         } else {
+             // Internal sound engine should only respond to MIDI events coming from Audiobus
+         }
+     } else {
+         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+     }
+ }
+ @endcode
+ 
+ See the AB Sender sample app for a demonstration of this.
+
+ > You should not access any Objective C code from a realtime thread like the
+ > audio rendering callback. If you want to evaluate the localOn property from
+ > there, you can use the realtime-safe C function [ABMIDISenderPortIsLocalOn](@ref ABMIDISenderPort::ABMIDISenderPortIsLocalOn).
+ 
+ Mute your internal sound engine        {#Mute-Internal-Sound-Engine}
+ -------------------------------
+ 
+ If your app is both a MIDI controller or filter *and* a sound generator,
+ the internal sound engine needs to be muted in some cases. Consider the following
+ MIDI connection pipeline:
+ 
+ <img src="muteSoundEngine0.png" width="580" height="234" title="A case where the internal sound engine needs to be muted." />
+ 
+ In this example, AB Sender is used as MIDI controller in the MIDI Input slot. The generated notes are sent
+ to AB MIDI Filter. From there the events are sent to Animoog. In this scenario, AB Sender is a 
+ pure MIDI controller, and must not generate any of its own audio.
+ 
+ To allow your app to mute when appropriate, ABAudioSenderPort provides a property called
+ [muted](@ref ABAudioSenderPort::muted). When the value of this property is YES, your app should
+ avoid producing any audio output. When NO, your app should behave as usual.
+ 
+ To respond to changes to the `muted` property, observe the property of your
+ ABAudioSenderPort instance and respond appropriately when changes occur:
+ 
+ @code
+ void *kSenderPortMutedChanged = &kSenderPortMutedChanged;
+
+ ...
+ 
+ [sender addObserver:self
+         forKeyPath:@"muted"
+             options:0
+             context:kSenderPortMutedChanged];
+
+  ...
+ 
+  -(void)observeValueForKeyPath:(NSString *)keyPath
+                         ofObject:(id)object
+                           change:(NSDictionary *)change
+                          context:(void *)context {
+     if ( context == kSenderPortMutedChanged ) {
+         if ( self.audioSenderPort.muted ) {
+             // Mute the internal sound engine
+         } else {
+             // Unmute the internal sound engine
+         }
+     } else {
+         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+     }
+ }
+ @endcode
+ 
+ See the AB Sender sample app for a demonstration of this.
+ 
+ > You should not access any Objective C code from a realtime thread.
+ > If you want to evaluate the muted property from
+ > there, you can use the realtime-safe C function `ABAudioSenderPortIsMuted`.
+ 
+ > If possible, Audiobus will mute your app's audio engine for you. But it can't
+ > make your app stop processing audio. So in the case that no audio is audible
+ > you should make sure that your sound engine does not process audio.
+ > This will save CPU resources as well as battery power.
+ 
+ 
+ 
+ Don't use MIDI channels                               {#Dont-use-MIDI-channels}
+ -----------------------
+ 
+ Audiobus-compatible apps should not use the MIDI Channel information contained
+ within MIDI packets. As Audiobus uses ports (instances of `ABMIDIReceiverPort`, `ABMIDIFilterPort` and `ABMIDISenderPort`)
+ for routing of MIDI, the MIDI Channel data is not required and using it can cause unexpected behaviour.
+ 
+ - If possible, let your app only send on MIDI channel 0.
+ - Do not evaluate MIDI channels. It should make no difference for your app if a message has MIDI channel 1, 2, etc.
+ - If your app is a multitimbral synth and must therefore receive on multiple
+   MIDI channels, create separate instances of `ABMIDIReceiverPort` for each timbre you want to use. The app SoundPrism
+   creates one MIDI port for the bass sound, one for the chord sound and one for the melody sound, for example.
+ - If your app is a complex MIDI controller, please create an instance
+   of `ABMIDISenderPort` for each MIDI channel you want to use. The app Fugue Machine creates one instance of 
+   `ABMIDISenderPort` for each playhead, for example.
+ 
+ By using Audiobus MIDI ports instead of MIDI Channel information, your app allows Audiobus to correctly display
+ MIDI sources and destinations to the user.
+ 
+ 
+ Don't show private MIDI ports                     {#Dont-use-private-MIDI-ports}
+ -----------------------------
+ 
+ Audiobus uses private Virtual Core MIDI Sources and Destinations to route MIDI from app to app. Normally, private
+ MIDI ports should never appear within other apps. Unfortunately there is currently a bug in iOS making these
+ ports visible from time to time.
+ 
+ To prevent your app's Core MIDI sources and destinations list from showing tons of Audiobus MIDI ports, please check
+ if a port is private before displaying it to the user. Use this code to find out if a MIDI endpoint is private or not:
+ 
+ @code
+ BOOL isPrivateMIDIEndpoint(MIDIEndpointRef endpoint){
+    OSStatus result;
+    SInt32 isPrivate;
+    
+    result = MIDIObjectGetIntegerProperty (endpoint, kMIDIPropertyPrivate, &isPrivate);
+    if (result == noErr)
+        return isPrivate != 0;
+    else
+        return NO;
+}
+ @endcode
+ 
+ Ideally, you should perform this check some milliseconds after a port has been appeared, to allow the owning app to
+ set this flag on the other end.
+
+ 
+ Automatic App Termination  {#Automatic-app-termination}
+ --------------------------------------------
+ 
+ There is currently a bug in iOS which breaks receiving from Core MIDI when an app is relaunched
+ into the background. To work around this bug we have added a mechanism within the Audiobus SDK that allows
+ us to terminate and restart your app while it is in background. We only use this system if the aforementioned bug
+ is observed. Currently only apps having one or more ports of type `ABMIDIReceiverPort` and `ABMIDIFilterPort` are 
+ affected by this bug.
+ 
+ If your app provides one of these ports you might want to observe [ABApplicationWillTerminateNotification](@ref ABApplicationWillTerminateNotification).
+ This notification will be sent out shortly before Audiobus will terminate and relaunch your app.
+ 
+@page Migration-Guide 2.x-3.x Migration Guide
+ 
+ Along with a variety of workflow improvements including launching into the background,
+ the main new addition in Audiobus 3 is MIDI routing. You can now send, filter and
+ receive MIDI just like you can with audio, using the three new classes:
+ 
+ - ABMIDISenderPort
+ - ABMIDIFilterPort
+ - ABMIDIReceiverPort
+ 
+ Here's what you need to do to update your existing Audiobus 2 integration to Audiobus 3.
+ 
+ 
+ 1. Replace Audiobus 2 SDK                        {#Migration-Guide-Replace-SDK}
+ ======================
+ 
+ First you need to [download the Audiobus 3 SDK](@ref Project-Setup). Simply replace
+ the previous Audiobus 2 SDK with the new one. 
+ 
+ Additionally you need to link `libz.tbd` to your project, from your app target's
+ "Link Binary With Libraries" build phase.
+ 
+ 
+ 2. Rename ABSenderPort, ABFilterPort and ABReceiverPort   {#Migration-Guide-Rename-Ports}
+ ====================================================
+ 
+ Audiobus 3 clearly distinguishes between audio and MIDI ports. Therefore
+ you need to rename all occurrences of ABSenderPort, ABFilterPort and ABReceiverPort 
+ to ABAudioSenderPort, ABAudioFilterPort and ABAudioReceiverPort, respectively.
+ 
+ If you want to save time, the [migrateAudiobus3.py](migrateAudiobus3.py)
+ script (also contained in the Audiobus SDK folder) will perform all required
+ renaming for you. Here's how to use it:
+ 
+ 1. Make a backup of your current source folder
+ 2. Open the Terminal application
+ 3. Change into the folder containing `migrateAudiobus3.py` (e.g. the Audiobus 3 SDK folder)
+ 4. Enter `python migrateAudiobus3.py YOURSOURCEFOLDER`
+ 5. Compile and check for errors
+ 
+ 
+ 
+ 3. Create A New Version On The Audiobus Registry                {#Migration-Guide-Version}
+ ==================================
+ 
+ To ease the integration of the Audiobus SDK we have introduced a new API key format.
+ With the help of the new API key we are now able to check if the ports declared
+ in your app match the ports declared in the Audiobus registry. If this is not
+ the case a detailed error message is printed to the console, helping you to identify and
+ fix the issue as quickly as possible. To update the API key of your app please
+ follow these steps:
+ 
+ 1. Increase the version number of the Audio Components in your app's Info.plist file.
+ 2. Open the [Audiobus Developer Center](https://developer.audiob.us/apps/), and open your
+ app's registration there.
+ 3. Scroll down and click the green "Add Version" button.
+ 4. Access the compiled version of your app's Info.plist:
+    1. Build your app, and find the built version in the "Products" area within Xcode.
+    2. Right-click your app, and select "Show in Finder".
+    3. Right-click your app in Finder, and select "Show Package Contents". Find Info.plist
+       within this folder.
+ 5. Drag and drop your app's compiled Info.plist file in the field provided for it on the
+    Audiobus Developer Center.
+ 6. Press "Submit".
+ 7. You will receive a new API key. Instantiate ABAudiobusController with that new key.
+ 8. Run your app and check the console output for any error messages.
+
+ 
+ 4. Disable Core MIDI when Necessary         {#Migration-Guide-Add-MIDI-Support}
+ ===================================
+ 
+ If your app interacts with Core MIDI directly, then it's important that you disable any Core MIDI
+ functionality in your app when connected to Audiobus. This will prevent your app from receiving 
+ Core MIDI events twice, once via Audiobus and once from the Core MIDI system itself.
+ 
+ Please read and implement the chapter @ref Disable-Core-MIDI "Disable Core MIDI"
+ in the MIDI guide. Audiobus will tell you when to enable and disable sending and receiving Core MIDI.
+ 
+ 5. Hide Inter-App Audio Transport Panel         {#Migration-Guide-Hide-Inter-App-Audio-Transport-Panel}
+ =======================================
+ 
+ If your app shows an Inter-App Audio transport panel, you will need to hide it while
+ participating in an Audiobus session. See 
+ @ref Show-and-hide-Inter-App-Audio-Transport-Panel "Show and hide Inter-App Audio Transport Panel" 
+ in the audio integration guide for more info.
+ 
+ 6. Inter-App Audio Hosts: Do not show Audiobus' hidden sender ports  {#Migration-Guide-Dont-show-hidden-sender-ports}
+ ==================================================
+
+ Audiobus provides a number of hidden intermediate sender ports. These ports are
+ only used internally by the Audiobus SDK. If your app is an Inter-App Audio host you should
+ hide these ports in the list of available Inter-App Audio nodes. For more
+ information read the section entitled
+ @ref Dont-show-Audiobus-hidden-sender-ports "If your app is an IAA host, do not show Audiobus' hidden sender ports"
+ in the audio integration guide.
+ 
+ 7. Hosts, Audiobus 2 and Audiobus 3 behave differently {#Migration-Guide-AB2-and-AB3-behave-differently}
+ ======================================================
+ 
+ There are some important differences between the way inputs and filters are 
+ connected to outputs. If your app offers an ABAudioReceiverPort, please read
+ the chapter @ref Differences-between-audiobus-2-and-audiobus-3 "Differences between Audiobus 2 and Audiobus 3".
  
 @page Recipes Common Recipes
 
  This section contains code samples illustrating a variety of common Audiobus-related tasks.
  More sample code is available within the "Samples" folder of the SDK distribution.
  
- @section Sender-Port-Recipe Create a sender port and send audio manually
+ Create a sender port and send audio manually        {#Sender-Port-Recipe}
+ ============================================
 
  This code snippet demonstrates how to create a sender port, and then send audio through it 
- manually, without using ABSenderPort's audio unit initialiser. Note that the audio unit method is
+ manually, without using ABAudioSenderPort's audio unit initialiser. Note that the audio unit method is
  recommended as it's much simpler, but there may be circumstances under which more control is needed, 
  such as when you are publishing multiple sender ports.
  
  The code below also demonstrates how to use the result of 
- @link ABSenderPort::ABSenderPortIsMuted ABSenderPortIsMuted @endlink to determine when to mute output.
+ @link ABAudioSenderPort::ABAudioSenderPortIsMuted ABAudioSenderPortIsMuted @endlink to determine when to mute output.
  
  @code
  @interface MyAudioEngine ()
  @property (strong, nonatomic) ABAudiobusController *audiobusController;
- @property (strong, nonatomic) ABSenderPort *sender;
+ @property (strong, nonatomic) ABAudioSenderPort *sender;
  @end
  
  @implementation MyAudioEngine
@@ -1234,14 +1758,14 @@
  
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:@"YOUR-API-KEY"];
  
-    ABSenderPort *sender = [[ABSenderPort alloc] initWithName:@"Audio Output"
+    ABAudioSenderPort *sender = [[ABAudioSenderPort alloc] initWithName:@"Audio Output"
                                                         title:NSLocalizedString(@"Main App Output", @"")
                                     audioComponentDescription:(AudioComponentDescription) {
                                         .componentType = kAudioUnitType_RemoteGenerator,
                                         .componentSubType = 'subt',
                                         .componentManufacturer = 'manu' }];
     sender.clientFormat = [MyAudioEngine myAudioDescription];
-    [_audiobusController addSenderPort:_sender];
+    [self.audiobusController addAudioSenderPort:_sender];
 
     ...
  }
@@ -1261,10 +1785,10 @@
     ...
  
     // Now send audio through Audiobus
-    ABSenderPortSend(self->_sender, ioData, inNumberFrames, inTimeStamp);
+    ABAudioSenderPortSend(self->_sender, ioData, inNumberFrames, inTimeStamp);
  
     // Now mute, if appropriate
-    if ( ABSenderPortIsMuted(self->_sender) ) {
+    if ( ABAudioSenderPortIsMuted(self->_sender) ) {
         // If we should be muted, then mute
         for ( int i=0; i<ioData->mNumberBuffers; i++ ) {
             memset(ioData->mBuffers[i].mData, 0, ioData->mBuffers[i].mDataByteSize);
@@ -1274,10 +1798,11 @@
  }
  @endcode
 
- @section Filter-Port-Recipe Create a filter port with a process block
+ Create a filter port with a process block        {#Filter-Port-Recipe}
+ =========================================
 
  This demonstrates how to create and implement a filter port with a process block. Using
- a process block is more complex than using ABFilterPort's audio unit initialiser, but
+ a process block is more complex than using ABAudioFilterPort's audio unit initialiser, but
  may provide more flexibility under certain circumstances, such as when you are publishing
  multiple filter ports.
  
@@ -1291,7 +1816,7 @@
  @code
  @interface MyAudioEngine ()
  @property (strong, nonatomic) ABAudiobusController *audiobusController;
- @property (strong, nonatomic) ABFilterPort *filter;
+ @property (strong, nonatomic) ABAudioFilterPort *filter;
  @end
  
  @implementation MyAudioEngine
@@ -1301,7 +1826,7 @@
  
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:@"YOUR-API-KEY"];
  
-    self.filter = [[ABFilterPort alloc] initWithName:@"Main Effect"
+    self.filter = [[ABAudioFilterPort alloc] initWithName:@"Main Effect"
                                                title:@"Main Effect"
                            audioComponentDescription:(AudioComponentDescription) {
                                .componentType = kAudioUnitType_RemoteEffect,
@@ -1312,7 +1837,7 @@
                                         } processBlockSize:0];
 
     filter.clientFormat = [MyAudioEngine myAudioDescription];
-    [_audiobusController addFilterPort:_filter];
+    [self.audiobusController addFilterPort:_filter];
  
     ...
  }
@@ -1329,7 +1854,7 @@
     __unsafe_unretained MyAudioEngine *self = (__bridge MyAudioEngine*)inRefCon;
  
     // Mute and exit, if filter is connected
-    if ( ABFilterPortIsConnected(self->_filter) ) {
+    if ( ABAudioFilterPortIsConnected(self->_filter) ) {
         for ( int i=0; i<ioData->mNumberBuffers; i++ ) {
             memset(ioData->mBuffers[i].mData, 0, ioData->mBuffers[i].mDataByteSize);
         }
@@ -1343,7 +1868,8 @@
  }
  @endcode
  
- @section Receiver-Port-Recipe Create a receiver port and receive audio
+ Create a receiver port and receive audio        {#Receiver-Port-Recipe}
+ ========================================
 
  This code illustrates the typical method of receiving audio from Audiobus.
  
@@ -1353,7 +1879,7 @@
  @code
  @interface MyAudioEngine ()
  @property (strong, nonatomic) ABAudiobusController *audiobusController;
- @property (strong, nonatomic) ABReceiverPort *receiver;
+ @property (strong, nonatomic) ABAudioReceiverPort *receiver;
  @end
  
  @implementation MyAudioEngine
@@ -1363,9 +1889,9 @@
  
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:@"YOUR-API-KEY"];
  
-    self.receiver = [[ABReceiverPort alloc] initWithName:@"Main" title:NSLocalizedString(@"Main Input", @"")];
+    self.receiver = [[ABAudioReceiverPort alloc] initWithName:@"Main" title:NSLocalizedString(@"Main Input", @"")];
     _receiver.clientFormat = [MyAudioEngine myAudioDescription];
-    [_audiobusController addReceiverPort:_receiver];
+    [self.audiobusController addReceiverPort:_receiver];
 
     ...
  }
@@ -1383,9 +1909,9 @@
 
     AudioTimeStamp timestamp = *inTimeStamp;
  
-    if ( ABReceiverPortIsConnected(self->_receiver) ) {
+    if ( ABAudioReceiverPortIsConnected(self->_receiver) ) {
        // Receive audio from Audiobus, if connected.
-       ABReceiverPortReceive(self->_receiver, nil, ioData, inNumberFrames, &timestamp);
+       ABAudioReceiverPortReceive(self->_receiver, nil, ioData, inNumberFrames, &timestamp);
     } else {
        // Receive audio from system input otherwise
        AudioUnitRender(self->_audioUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, ioData);
@@ -1396,7 +1922,8 @@
  @endcode
 
 
- @section Trigger-Recipe Create a trigger
+ Create a trigger        {#Trigger-Recipe}
+ ================
 
  This demonstrates how to create a trigger, which can be invoked remotely to perform some action within your app.
  
@@ -1435,7 +1962,8 @@
  }
  @endcode
 
- @section Lifecycle-Recipe Manage application life-cycle
+ Manage application life-cycle        {#Lifecycle-Recipe}
+ =============================
  
  This example demonstrates the recommended way to manage your application's life-cycle.
  
@@ -1448,50 +1976,38 @@
  your audio system, or you must watch for @link ABConnectionsChangedNotification @endlink and start your
  audio system when the notification is observed.
  
- Once your app is connected via Audiobus, it should not under any circumstances suspend its 
- audio system when moving into the background. We also strongly recommend remaining active in the
- background while it's part of an active Audiobus session (i.e. the app's been used with Audiobus, and the
- Audiobus app is still active), to keep your app available for use without needing
- to be re-launched. When moving to the background, the app can check the 
- [connected](@ref ABAudiobusController::connected) and
- [memberOfActiveAudiobusSession](@ref ABAudiobusController::memberOfActiveAudiobusSession) properties of the Audiobus controller,
- and only stop the audio system if both are false:
+ Once your app is connected via Audiobus (or IAA), it should not under any circumstances suspend its
+ audio system when moving into the background. When moving to the background, the app can check the
+ [connected](@ref ABAudiobusController::connected) property of the Audiobus controller,
+ and only stop the audio system if the value is NO:
  
  @code
- if ( !_audiobusController.connected && !_audiobusController.memberOfActiveAudiobusSession ) {
-     // Fade out and stop the audio engine, suspending the app, if we're not connected, and we're not part of an active Audiobus session
+ if ( !_audiobusController.connected ) {
+     // Fade out and stop the audio engine, suspending the app, if we're not connected
      [ABAudioUnitFader fadeOutAudioUnit:_audioEngine.audioUnit completionBlock:^{ [_audioEngine stop]; }];
  }
  @endcode
- 
- If your app is in the background when the [memberOfActiveAudiobusSession](@ref ABAudiobusController::memberOfActiveAudiobusSession) property becomes
- false, indicating that the session has ended, we recommend shutting down the audio engine, as appropriate.
  
  The below example uses ABAudioUnitFader to provide smooth fade-in and fade-out transitions, to avoid hard
  clicks when starting or stopping the audio system.
  
  @code
- static void * kAudiobusConnectedOrActiveMemberChanged = &kAudiobusConnectedOrActiveMemberChanged;
+ static void * kAudiobusConnectedChanged = &kAudiobusConnectedChanged;
  
  -(BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // ...
 
-    // Watch the connected and memberOfActiveAudiobusSession properties
-    [_audiobusController addObserver:self
+    // Watch the connected property
+    [self.audiobusController addObserver:self
                          forKeyPath:@"connected"
                             options:0
-                            context:kAudiobusConnectedOrActiveMemberChanged];
-    [_audiobusController addObserver:self
-                         forKeyPath:@"memberOfActiveAudiobusSession"
-                            options:0
-                            context:kAudiobusConnectedOrActiveMemberChanged];
+                            context:kAudiobusConnectedChanged];
 
     // ...
  }
  
  -(void)dealloc {
      [_audiobusController removeObserver:self forKeyPath:@"connected"];
-     [_audiobusController removeObserver:self forKeyPath:@"memberOfActiveAudiobusSession"];
  }
  
  -(void)observeValueForKeyPath:(NSString *)keyPath
@@ -1499,12 +2015,11 @@
                        change:(NSDictionary *)change
                       context:(void *)context {
 
-    if ( context == kAudiobusConnectedOrActiveMemberChanged ) {
+    if ( context == kAudiobusConnectedChanged ) {
         if ( [UIApplication sharedApplication].applicationState == UIApplicationStateBackground
-               && !_audiobusController.connected
-               && !_audiobusController.memberOfActiveAudiobusSession ) {
+               && !_audiobusController.connected  ) {
 
-            // Audiobus session is finished. Time to sleep.
+            // Disconnected. Time to sleep.
             [_audioEngine stop];
         }
     } else {
@@ -1513,8 +2028,8 @@
  }
  
  -(void)applicationDidEnterBackground:(NSNotification *)notification {
-     if ( !_audiobusController.connected && !_audiobusController.memberOfActiveAudiobusSession ) {
-         // Fade out and stop the audio engine, suspending the app, if we're not connected, and we're not part of an active Audiobus session
+     if ( !_audiobusController.connected ) {
+         // Fade out and stop the audio engine, suspending the app, if we're not connected
          [ABAudioUnitFader fadeOutAudioUnit:_audioEngine.audioUnit completionBlock:^{ [_audioEngine stop]; }];
      }
  }
@@ -1527,7 +2042,8 @@
  }
  @endcode
 
- @section Determine-Connected Determine if app is connected via Audiobus
+ Determine if app is connected via Audiobus        {#Determine-Connected}
+ ==========================================
  
  The following code demonstrates one way to monitor and determine whether any Audiobus ports are
  currently connected.
@@ -1536,10 +2052,10 @@
 
  - Observe (via KVO) the 'connected' property of ABAudiobusController or any of the port classes,
    or any of the 'sources'/'destinations' properties of the port classes
- - Watch for `ABReceiverPortConnectionsChangedNotification`, `ABReceiverPortPortAddedNotification`,
-   `ABReceiverPortPortRemovedNotification`, `ABSenderPortConnectionsChangedNotification`, or
-   `ABFilterPortConnectionsChangedNotification`.
- - Use `ABReceiverPortIsConnected`, `ABSenderPortIsConnected`, and `ABFilterPortIsConnected` from
+ - Watch for `ABAudioReceiverPortConnectionsChangedNotification`, `ABAudioReceiverPortPortAddedNotification`,
+   `ABAudioReceiverPortPortRemovedNotification`, `ABAudioSenderPortConnectionsChangedNotification`, or
+   `ABAudioFilterPortConnectionsChangedNotification`.
+ - Use `ABAudioReceiverPortIsConnected`, `ABAudioSenderPortIsConnected`, and `ABAudioFilterPortIsConnected` from
    a Core Audio thread.
  
  @code
@@ -1564,18 +2080,90 @@
  }
  @endcode
  
- @section Enumerate-Connections Enumerate apps connected to a receiver port
+ Enumerate apps connected to a port        {#Enumerate-Connections}
+ ==================================
  
- This illustrates how to inspect each individual source of a receiver port. This information
- can be used to update the user interface, or configure models to represent each audio stream.
+ This illustrates how to inspect each individual source or destination of a port.
+ Sender ports can have only destinations, receiver ports only sources. Filter ports
+ can have both, sources and destinations.
+ 
+ <blockquote>
+ The way you obtain access to sources has changed in Audiobus 3. Audiobus 3
+ inserts intermediate routings. Thus the sources obtained by ABPort::sources
+ are not the source you are seeing in the Audiobus UI. Using ABPort::sources
+ and ABPort::destinations you will get the physically connected sources and
+ destinations. To represent sources and destinations in the user inteface of your app
+ we recomment to use the new function ABPort::sourcesRecursive and
+ ABPort::destinationsRecursive.
+ </blockquote>
+ 
+ To get the physically connected sources iterate the sources property of your
+ port:
  
  @code
  for ( ABPort *connectedPort in _receiverPort.sources ) {
-    NSLog(@"Port '%@' of app '%@' is connected", connectedPort.displayName, connectedPort.peer.displayName);
+    NSLog(@"Source port '%@' of app '%@' is connected", connectedPort.displayName, connectedPort.peer.displayName);
  }
  @endcode
  
- @section Get-All-Sources Get all sources of the current Audiobus session
+ To get the logically connected sources iterate the sourcesRecursive property of your
+ port. This function will not only return direct sources but also indirect ones:
+ 
+ @code
+ for ( ABPort *connectedPort in _receiverPort.sourcesRecursive ) {
+     NSLog(@"Source port '%@' of app '%@' is connected", connectedPort.displayName, connectedPort.peer.displayName);
+ }
+ @endcode
+ 
+ The same is possible with destinations:
+ 
+ @code
+ for ( ABPort *connectedPort in _senderPort.destinations ) {
+    NSLog(@"Destination port '%@' of app '%@' is connected", connectedPort.displayName, connectedPort.peer.displayName);
+ }
+ @endcode
+ 
+ @code
+ for ( ABPort *connectedPort in _senderPort.destinationsRecursive ) {
+    NSLog(@"Destination port '%@' of app '%@' is connected", connectedPort.displayName, connectedPort.peer.displayName);
+ }
+ @endcode
+ 
+ Show icons and titles for sources and destinations        {#Show-icons-and-titles}
+ ==================================================
+ 
+ To show the titles and icons of sources connected to a port use the 
+ new properties sourcesIcon and sourcesTitle as well destinationsIcon and 
+ destinationsTitle:
+ 
+ @code
+    UIImage *sourcesIcon = _filterPort.sourcesIcon;
+    NSString *sourcesTitle = _filterPort.sourcesIcon;
+ 
+    UIImage *destinationsIcon = _filterPort.destinationsIcon;
+    NSString *destinationsTitle = _filterPort.destinationsIcon;
+ @endcode
+ 
+ These properties will return a summarized icon and title representing all
+ sources and destinations connected to a port. 
+ 
+ If you need access to the icons of the single sources you can iterate the
+ sources and use the properties peer.icon and peer.name:
+ 
+ @code
+ for ( ABPort *sourcePort in _receiverPort.sourcesRecursive ) {
+     NSString sourcePeerName =  *sourcePort.peer.name;
+     UIImage *sourcePeerIcon = *sourcePort.peer.icon;
+ }
+ @endcode
+ 
+The same can be done with destinations.
+
+ 
+ 
+ 
+ Get all sources of the current Audiobus session        {#Get-All-Sources}
+ ===============================================
  
  This example demonstrates how to obtain a list of all source ports of the current session; that is,
  all ports that correspond to the 'Inputs' position in the Audiobus app. Note that this is a different
@@ -1584,16 +2172,17 @@
  
  @code
  NSArray *allSessionSources = [_audiobusController.connectedPorts filteredArrayUsingPredicate:
-                                [NSPredicate predicateWithFormat:@"type = %d", ABPortTypeSender]];
+                                [NSPredicate predicateWithFormat:@"type = %d", ABPortTypeAudioSender]];
  @endcode
  
- Note: similarly, you can obtain a list of all filters by replacing the `ABPortTypeSender` identifier with
- `ABPortTypeFilter`, and a list of all receivers with the `ABPortTypeReceiver`.
+ Note: similarly, you can obtain a list of all filters by replacing the `ABPortTypeAudioSender` identifier with
+ `ABPortTypeAudioFilter`, and a list of all receivers with the `ABPortTypeAudioReceiver`.
  
- @section Receiver-Port-Separate-Streams Receive audio as separate streams
+ Receive audio as separate streams        {#Receiver-Port-Separate-Streams}
+ =================================
  
- This example demonstrates how to use ABReceiverPort's separate-stream receive mode
- ([receiveMixedAudio](@ref ABReceiverPort::receiveMixedAudio) = NO) to receive each audio stream from 
+ This example demonstrates how to use ABAudioReceiverPort's separate-stream receive mode
+ ([receiveMixedAudio](@ref ABAudioReceiverPort::receiveMixedAudio) = NO) to receive each audio stream from 
  each connected app separately, rather than as a single mixed-down audio stream.
  
  The code below maintains a C array of currently-connected sources, in order to be able to enumerate them
@@ -1624,10 +2213,10 @@
  
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:@"YOUR-API-KEY"];
  
-    self.receiver = [[ABReceiverPort alloc] initWithName:@"Main" title:NSLocalizedString(@"Main Input", @"")];
+    self.receiver = [[ABAudioReceiverPort alloc] initWithName:@"Main" title:NSLocalizedString(@"Main Input", @"")];
     _receiver.clientFormat = [MyAudioEngine myAudioDescription];
     _receiver.receiveMixedAudio = NO;
-    [_audiobusController addReceiverPort:_receiver];
+    [self.audiobusController addReceiverPort:_receiver];
 
     // Watch the receiver's 'sources' property to be notified when the sources change
     [_receiver addObserver:self forKeyPath:@"sources" options:0 context:kReceiverSourcesChanged];
@@ -1695,20 +2284,20 @@
          }
      }
  
-    if ( ABReceiverPortIsConnected(self->_receiver) ) {
+    if ( ABAudioReceiverPortIsConnected(self->_receiver) ) {
 
         // Now we can iterate through the source port table without using Objective-C:
         for ( int i=0; i<kMaxSources; i++ ) {
             if ( self->_portTable[i].port ) {
                 AudioTimeStamp timestamp;
-                ABReceiverPortReceive(self->_receiver, (__bridge ABPort*)self->_portTable[i].port, ioData, inNumberFrames, &timestamp);
+                ABAudioReceiverPortReceive(self->_receiver, (__bridge ABPort*)self->_portTable[i].port, ioData, inNumberFrames, &timestamp);
                 
                 // Do something with this audio
             }
         }
 
         // Mark the end of this time interval
-        ABReceiverPortEndReceiveTimeInterval(self->_receiver);
+        ABAudioReceiverPortEndReceiveTimeInterval(self->_receiver);
 
     } else {
        // Receive audio from system input otherwise
@@ -1720,7 +2309,8 @@
  
  @endcode
  
- @section Audio-Queue-Input Use Audiobus input in an Audio Queue
+ Use Audiobus input in an Audio Queue        {#Audio-Queue-Input}
+ ====================================
  
  This example demonstrates the Audio Queue versions of the receiver port receive functions, which
  take an AudioQueueBufferRef argument instead of an AudioBufferList.
@@ -1741,7 +2331,7 @@
  
     // Intercept audio, replacing it with Audiobus input
     AudioTimeStamp timestamp = *inStartTime;
-    ABReceiverPortReceiveAQ(self->_audiobusReceiverPort,
+    ABAudioReceiverPortReceiveAQ(self->_audiobusReceiverPort,
                          nil,
                          inBuffer,
                          &inNumPackets,
@@ -1752,20 +2342,20 @@
  
  }
  @endcode
-
  
 @page Receiver-Port Receiving: The Audiobus Receiver Port
 
- The Audiobus receiver port class ABReceiverPort provides an interface for receiving audio,
+ The Audiobus receiver port class ABAudioReceiverPort provides an interface for receiving audio,
  either as separate audio streams (one per connected sender), or as a single audio stream with all
  sources mixed together.
 
  Receiving audio tends to be a little more involved than sending or filtering audio, so this section aims
- to discuss some of the finer points of using ABReceiverPort.
+ to discuss some of the finer points of using ABAudioReceiverPort.
 
- See the [Receiver Port](@ref Create-Receiver-Port) section of the integration guide for an initial overview.
+ See the [Receiver Port](@ref Create-Audio-Receiver-Port) section of the integration guide for an initial overview.
 
-@section Latency Dealing with Latency
+Dealing with Latency        {#Latency}
+====================
  
  Audiobus receivers are given timestamps along with every piece of audio they receive. These
  timestamps are vital for compensating for latency when recording in a time-sensitive context.
@@ -1789,25 +2379,34 @@
  played back. 
  
  Note that for system audio inputs, Audiobus already compensates for the reported hardware input
- latency, so you should not further modify the timestamp returned from ABReceiverPortReceive.
+ latency, so you should not further modify the timestamp returned from ABAudioReceiverPortReceive.
 
-@section Receiving-Separate-Streams Receiving Separate Streams
+Receiving Separate Streams        {#Receiving-Separate-Streams}
+==========================
 
  You can receive audio as separate stereo streams - one per source - or as a single mixed stereo audio stream.
  By default, Audiobus will return the audio as a single, mixed stream.
  
- If you wish to receive separate streams for each source, however, you can set
- [receiveMixedAudio](@ref ABReceiverPort::receiveMixedAudio) to `NO`. Then, each source will have
- its own audio stream, accessed by passing in a pointer to the source port in
- @link ABReceiverPort::ABReceiverPortReceive ABReceiverPortReceive @endlink.
+ <blockquote>
+ The behavior for receiving separate streams has been changed in Audiobus 3. 
+ In Audiobus 2 a separate stream for each <em>source</em> connected to a pipeline was
+ received. Audiobus 3 merges all sources in the input slot of a pipeline together into one stream.
+ So if users want to record several sources in separate streams they need to add
+ them to different pipelines in Audiobus 3.
+ </blockquote>
  
- After calling ABReceiverPortReceive for each source, you must then call
- @link ABReceiverPort::ABReceiverPortEndReceiveTimeInterval ABReceiverPortEndReceiveTimeInterval @endlink
+ If you wish to receive separate streams for each <em>pipeline</em>, however, you can set
+ [receiveMixedAudio](@ref ABAudioReceiverPort::receiveMixedAudio) to `NO`. Then, each pipeline will have
+ its own audio stream, accessed by passing in a pointer to the source port in
+ @link ABAudioReceiverPort::ABAudioReceiverPortReceive ABAudioReceiverPortReceive @endlink.
+ 
+ After calling ABAudioReceiverPortReceive for each source, you must then call
+ @link ABAudioReceiverPort::ABAudioReceiverPortEndReceiveTimeInterval ABAudioReceiverPortEndReceiveTimeInterval @endlink
  to mark the end of the current interval. 
 
  Please see the ['Receive Audio as Separate Streams'](@ref Receiver-Port-Separate-Streams) sample recipe,
- the documentation for [ABReceiverPortReceive](@ref ABReceiverPort::ABReceiverPortReceive)
- and [ABReceiverPortEndReceiveTimeInterval](@ref ABReceiverPort::ABReceiverPortEndReceiveTimeInterval),
+ the documentation for [ABAudioReceiverPortReceive](@ref ABAudioReceiverPort::ABAudioReceiverPortReceive)
+ and [ABAudioReceiverPortEndReceiveTimeInterval](@ref ABAudioReceiverPort::ABAudioReceiverPortEndReceiveTimeInterval),
  and the AB Multitrack sample app for more info.
  
  > Note you should not access the `sources` property, or any other Objective-C methods, from
@@ -1835,6 +2434,89 @@
     ([ABMultiStreamBufferEnqueue](@ref ABMultiStreamBuffer::ABMultiStreamBufferEnqueue)).
  3. You then dequeue each source from ABMultiStreamBuffer ([ABMultiStreamBufferDequeueSingleSource](@ref ABMultiStreamBuffer::ABMultiStreamBufferDequeueSingleSource)).
     Audio will be buffered and synchronised via the timestamps of the enqueued audio.
+ 
+ 
+ Differences between Audiobus 2 and Audiobus 3        {#Differences-between-audiobus-2-and-audiobus-3}
+ =============================================
+
+ There are some important differences between Audiobus 2 and Audiobus 3 once 
+ receiver ports come into play. The following table lists the most important 
+ differences:
+ 
+ 
+ &nbsp;                      | Audiobus 2               | Audiobus 3
+ --------------------------- | ------------------------ | -------------
+ Hosting inputs and filters  | The app in the output    | Audiobus itself.
+ Receiving multiple streams  | One stream per source    | One stream per pipeline
+ Assigning streams to tracks | Unique ID of the source  | Pipeline ID
+ 
+ > All of the proposed changes below are backward compatible with Audiobus 2.
+ > So don't worry about breaking Audiobus 2 compatibility by implementing it.
+ 
+ 
+ Intermediate Routings
+ ---------------------
+ 
+ Audiobus 3 introduces so called intermediate routings. Imagine the following 
+ input-filter-output connection chain:
+ 
+ @code
+   Animoog -> Bias -> Cubasis
+ @endcode
+ 
+ In Audiobus 2 Cubasis would host and connect Animoog and Bias. Because only
+ hosts can launch other apps in background we needed to make Audiobus 3 hosting 
+ Animoog and Bias. We did this by inserting a so called intermediate routing 
+ just before the output. Thus the connection graph internally looks like this:
+ 
+
+ @code
+   Animoog -> Bias -> ABIRIn - ABIROut -> Cubasis
+ @endcode
+ 
+  - <code>ABIRIn</code> is an audio receiver port within Audiobus.
+  - <code>ABIROut</code> is an audio sender port within Audiobus.
+  - The chain <code>ABIRIn - ABIROut</code> is the intermediate routing.
+  - Instead of being directly connected to Cubasis, Bias is now connected to ABIRIn
+    and therefore hosted by Audiobus.
+  - Cubasis is connected to ABIROut. Thus instead of hosting Animoog and Bias
+    Cubasis only hosts Audiobus' sender port ABIROut.
+ 
+ Internally Audiobus manages a set of sixteen intermediate routings which are
+ dynamically assigned.
+ 
+ 
+ Access sources connected to audio receiver ports
+ ------------------------------------------------
+ Due to the introduction of the intermediate routing between Cubasis and Bias
+ Cubasis is not able access the name of connected sources by iterating
+ the sources connected to an audio receiver port.
+ 
+ Much more you need now to read the property ABPort::sourcesRecursive.
+ Instead of returning the physically connected source which is Audiobus'
+ intermediate sender port, this property will return the logically connected
+ sources which are Animoog and Bias. Additionally ABPort provides the selectors
+ ABPort::sourcesIcon and ABPort::sourcesTitle.
+ 
+
+ Multitrack Audio Recorders: Assigning sources to tracks
+ -------------------------------------------------------
+ In Audiobus 2 multitrack records were able to record one track per source. 
+ To reassign a source to the right track, the unique ID of the source could 
+ be used. Because of the introduction of dynamic intermediate routings this is not
+ possible anymore. 
+ 
+ To solve this issue, Audiobus 3 introduces a new ABPort property called ABPort::pipelineIDs.
+ This property returns an array containing the IDs of all pipelines the port
+ is belonging too. Audio sender and audio filter ports can only be assigned to 
+ one pipeline. So by reading the first pipeline ID of a source connected to 
+ your audio receiver port you can estimate to which track this source belongs.
+ 
+ The pipeline ID of a source is stored within Audiobus preset. So you can make
+ sure that after loading a presets all assignements can be restored.
+ 
+ 
+ 
 
 @page Triggers Triggers
 
@@ -1845,7 +2527,8 @@
  @link ABTrigger::triggerWithSystemType:block: triggerWithSystemType:block: @endlink and
  @link ABTriggerSystemType @endlink), or [create your own](@ref ABButtonTrigger).
 
- @section Use-of-Triggers Use of Triggers
+ Use of Triggers        {#Use-of-Triggers}
+ ===============
  
  Triggers are designed to provide limited remote-control functionality over Audiobus apps. If your
  app has functions that may be usefully activated from a connected app, then you should expose them
@@ -1869,7 +2552,8 @@
  You can add and remove triggers at any time, so you should make use of this functionality to only
  offer users relevant actions.
  
- @section Creating-a-Trigger Creating a Trigger
+ Creating a Trigger        {#Creating-a-Trigger}
+ ==================
  
  **Whenever possible, you should use a built-in trigger type, accessible via
  @link ABTrigger::triggerWithSystemType:block: triggerWithSystemType:block: @endlink.**
@@ -1904,7 +2588,8 @@
  System triggers are automatically ordered as follows: 
  ABTriggerTypeRewind, ABTriggerTypePlayToggle, ABTriggerTypeRecordToggle.
 
- @section Remote-Triggers Remote Triggers
+ Remote Triggers        {#Remote-Triggers}
+ ===============
  
  [Audiobus Remote](http://audiob.us/remote) supports a new class of trigger which allows you to define
  extended functionality, without cluttering up the Audiobus Connection Panel.
@@ -1998,7 +2683,8 @@
  experience that users have is strongly dependent on how well these apps work together. So, these are
  a set of rules/guidelines that your app should follow, in order to be a good Audiobus citizen.
 
-@section Receivers-Timestamps Receivers, Use Audio Timestamps
+Receivers, Use Audio Timestamps        {#Receivers-Timestamps}
+===============================
 
  When dealing with multiple effect pipelines, latency is an unavoidable factor that is very important to 
  address when timing is important.
@@ -2014,7 +2700,8 @@
 
  See [Dealing with Latency](@ref Latency) for more info.
 
-@section Low-Buffer-Durations Use Low IO Buffer Durations, If You Can
+Support Low IO Buffer Durations, If You Can        {#Low-Buffer-Durations}
+===========================================
 
  Core Audio allows apps to set a preferred IO buffer duration via the audio session (see
  AVAudioSession's `preferredIOBufferDuration` property in the Core Audio documentation). This
@@ -2027,29 +2714,9 @@
  The tradeoff of small IO buffer durations is that your app has to work harder, per time unit,
  as it's processing smaller blocks of audio, more frequently. So, it's up to you to figure out
  how low your app's latency can go - but remember to save some CPU cycles for other apps as well!
-
-@section Background-Mode In the Background Suspend When Possible, But Not While Audiobus Is Running
  
- It's up to you whether it's appropriate to suspend your app in the background, but there are a few
- things to keep in mind.
- 
- Most important: you should never, ever suspend your app if it's connected via Audiobus. You can tell
- whether your app's connected at any time via the [connected](@ref ABAudiobusController::connected)
- property of the Audiobus controller.  If the value is YES, then you mustn't suspend.
- 
- Secondly, we strongly recommend that your app remain active in the background while the Audiobus app
- is running. This keeps your app available for being re-added to a connection graph (or reloaded from a
- preset) without needing to be manually launched again. Once the Audiobus app closes, then your app can
- suspend in the background. 
-
- See the [Lifecycle](@ref Lifecycle) section of the integration guide, or the [associated recipe](@ref Lifecycle-Recipe)
- for further details.
- 
- Note that during development, if your app has not yet been [registered](https://developer.audiob.us/apps/register)
- with Audiobus, Audiobus will not be able to see the app if it is not actively running in the background.
- Consequently, we **strongly recommend** that you register your app at the beginning of development.
- 
-@section Efficient Be Efficient!
+Be Efficient!        {#Efficient}
+=============
 
  Audiobus leans heavily on iOS multitasking! You could be running three synth apps, two filter apps,
  and be recording into a live-looper or a DAW. That requires a lot of juice.
@@ -2058,6 +2725,6 @@
  the CPU a bit. Never, ever wait on locks, allocate memory, or call Objective-C functions from Core
  Audio. Use plain old C in time-critical places (or even drop to assembly). Take a look at the
  Accelerate framework if you're not familiar with it, and use its vector operations instead of
- scalar operations within loops - it makes a huge difference, doesn't it?.
+ scalar operations within loops - it makes a huge difference.
 
 */

@@ -27,14 +27,6 @@ extern "C" {
 @property (nonatomic, readonly) BOOL connected;
 
 /*!
- * Whether the port is connected via Inter-App Audio
- *
- * Note that this property will also return YES when connected to
- * Audiobus peers using the 2.1 SDK.
- */
-@property (nonatomic, readonly) BOOL interAppAudioConnected;
-
-/*!
  * Whether the port is connected via Audiobus
  */
 @property (nonatomic, readonly) BOOL audiobusConnected;
@@ -47,6 +39,14 @@ extern "C" {
 @property (nonatomic, weak, readonly) ABAudiobusController *audiobusController;
     
 @optional
+    
+/*!
+ * Whether the port is connected via Inter-App Audio
+ *
+ * Note that this property will also return YES when connected to
+ * Audiobus peers using the 2.1 SDK.
+ */
+@property (nonatomic, readonly) BOOL interAppAudioConnected;
 
 /*!
  * Currently-connected sources

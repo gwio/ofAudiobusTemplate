@@ -3,10 +3,13 @@
 
 #import "ofApp.h"
 
+//#include "ofxiOSExtras.h"
+//#include "ofAppiOSWindow.h"
+
 /* You might need to get a temporary key for this app from https://developer.audiob.us/ and maybe
 change the AudioComponents Names in the plist to test this on a device */
 
-static NSString *const AUDIOBUS_API_KEY= @"MTQ5NTgxODQxMCoqKm9mQXVkaW9idXNUZW1wbGF0ZSoqKm9mVGVtcGxhdGUtMS4wLmF1ZGlvYnVzOi8vKioqW2F1cmcudGVzdC5zbnRoLjFd:OVq7hNBGqxgVKuQF38+Y3r3BYOFJPm66gsyUG1CxPs7Gmp8JVu+OOPGZyZDmBudIxQI3MG7MqsIkt44VNT4fqcG6Riq5N8DX806VPfopTAatobfrNBTq6EFCcP88Y3vK";
+static NSString *const AUDIOBUS_API_KEY= @"H4sIAAAAAAAAA22OPW/CMBCG/8vNBDcqBZEtGVhZumEUOclBLRLbujujWoj/joMydOhwy/N+3QPwN1hKUEH5tdnnK7c7WEEX3TBi68yEWfKXOg7Wd5G/cQqjEcyWSGPL/Q++Hb2f1sdDUTeFLI61WSKVVlplf/AkDNXpAZLCnDGRrpkvG8dDWzftn/4BuScbxHr3n8yxW3o4OclgMi5eTC+RkDIV5JnekfjdUD7PK7BDVrSaf/RkKBWEV8tCZl7R6oZJq8+PzR6eL/QntikZAQAA:G0ehqg7G3Fn+GHFzkpuYBL/FClylMvCvMqWwChBHvRsTsqpl8ehU1w1JMGFzJtxIC8oI1dv4tTRGQ1RBfFEMy2lPECs8qq8BzBxEjryUVE/W5W73GuxUgLCvEDfuFunL";
 
 
 @implementation MyAppDelegate
@@ -15,11 +18,11 @@ static NSString *const AUDIOBUS_API_KEY= @"MTQ5NTgxODQxMCoqKm9mQXVkaW9idXNUZW1wb
     
     [super applicationDidFinishLaunching:application];
     ofApp *app = new ofApp();
-    self.glViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen mainScreen] bounds] app:app ];
+self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen mainScreen] bounds] app:app ];
     
-    [self.window setRootViewController:self.glViewController];
+    [self.window setRootViewController:self.uiViewController];
     
-    
+    /*
     ofOrientation requested = ofGetOrientation();
     UIInterfaceOrientation interfaceOrientation = UIInterfaceOrientationPortrait;
     switch (requested) {
@@ -36,7 +39,9 @@ static NSString *const AUDIOBUS_API_KEY= @"MTQ5NTgxODQxMCoqKm9mQXVkaW9idXNUZW1wb
             interfaceOrientation = UIInterfaceOrientationLandscapeRight;
             break;
     }
+     */
     
+    /*
     if(!ofDoesHWOrientation) {
         [self.glViewController rotateToInterfaceOrientation:UIInterfaceOrientationPortrait animated:false];
     } else {
@@ -44,7 +49,7 @@ static NSString *const AUDIOBUS_API_KEY= @"MTQ5NTgxODQxMCoqKm9mQXVkaW9idXNUZW1wb
         [self.glViewController rotateToInterfaceOrientation:interfaceOrientation animated:false];
         ofSetOrientation(requested);
     }
-    
+    */
     
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:AUDIOBUS_API_KEY];
     self.audiobusController.connectionPanelPosition = ABConnectionPanelPositionTop;
@@ -63,15 +68,15 @@ static NSString *const AUDIOBUS_API_KEY= @"MTQ5NTgxODQxMCoqKm9mQXVkaW9idXNUZW1wb
     [[AVAudioSession sharedInstance] setCategory: AVAudioSessionCategoryPlayback withOptions: AVAudioSessionCategoryOptionMixWithOthers  error:  NULL];
     
     
-    self.audiobusSender = [[ABSenderPort alloc] initWithName:@"Audio "
+    self.audiobusSender = [[ABAudioSenderPort alloc] initWithName:@"Audio "
                                                        title:NSLocalizedString(@"Out", @"")
                                    audioComponentDescription:(AudioComponentDescription) {
                                        .componentType = kAudioUnitType_RemoteGenerator,
-                                       .componentSubType = 'snth', // Note single quotes
+                                       .componentSubType = 'synt', // Note single quotes
                                        //this needs to match the audioComponents entry
                                        .componentManufacturer = 'test' }
                                                    audioUnit:stream.audioUnit];
-    [_audiobusController addSenderPort:_audiobusSender];
+    [_audiobusController addAudioSenderPort:_audiobusSender];
     
     
     return YES;

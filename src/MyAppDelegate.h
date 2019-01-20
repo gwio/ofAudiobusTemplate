@@ -1,16 +1,16 @@
 
 #import "ofxiOSAppDelegate.h"
-#import "ofxiOSViewController.h"
-#import <Foundation/Foundation.h>
+//#import "ofxiOSViewController.h"
+//#import <Foundation/Foundation.h>
 #import "Audiobus.h"
 
 @interface MyAppDelegate : ofxiOSAppDelegate
 
-@property (nonatomic, strong) ofxiOSViewController * rootViewController;
+//@property (nonatomic, strong) ofxiOSViewController * rootViewController;
 
 @property (strong, nonatomic) ABAudiobusController *audiobusController;
 
-@property (strong, nonatomic) ABSenderPort * audiobusSender;
+@property (strong, nonatomic) ABAudioSenderPort * audiobusSender;
 
 @end
 

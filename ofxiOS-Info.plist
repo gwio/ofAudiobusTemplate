@@ -8,9 +8,9 @@
 			<key>manufacturer</key>
 			<string>test</string>
 			<key>name</key>
-			<string>test:ofAudioBusTemplate</string>
+			<string>OF_AB_Template</string>
 			<key>subtype</key>
-			<string>snth</string>
+			<string>synt</string>
 			<key>type</key>
 			<string>aurg</string>
 			<key>version</key>
@@ -23,21 +23,8 @@
 	<string>${PRODUCT_NAME}</string>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
-	<key>CFBundleIconFile</key>
-	<string></string>
-	<key>CFBundleIcons</key>
-	<dict>
-		<key>CFBundlePrimaryIcon</key>
-		<dict>
-			<key>CFBundleIconFiles</key>
-			<array>
-				<string>Icon.png</string>
-				<string>Icon@2x.png</string>
-			</array>
-		</dict>
-	</dict>
 	<key>CFBundleIdentifier</key>
-	<string>${PRODUCT_NAME:identifier}</string>
+	<string>${PRODUCT_NAME:rfc1034identifier}</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -54,10 +41,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.test.ofTemplate</string>
+			<string>com.ofAB_template.sender</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>ofTemplate-1.0.audiobus</string>
+				<string>OF_AB_template.audiobus</string>
 			</array>
 		</dict>
 	</array>
@@ -65,12 +52,16 @@
 	<string>1.0</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Audiobus</string>
 	<key>UIApplicationExitsOnSuspend</key>
 	<false/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 	<key>UIStatusBarHidden</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>

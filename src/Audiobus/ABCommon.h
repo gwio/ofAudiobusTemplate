@@ -30,7 +30,17 @@ typedef enum {
  */
 typedef uint32_t ABPeerResourceID;
 
-int _ABAssert(BOOL condition, char* msg, char* file, int line);
+int _ABAssert(BOOL condition, const char* msg, char* file, int line);
+    
+typedef void(^ABCompletion)(NSError* error);
+
+/**
+ * Returns true if the audio component description belongs to one of the 
+ * Intermediate sender ports of Audiobus. You should hide these ports because
+ * they are only used by the Audiobus SDK.
+ */
+BOOL ABIsHiddenAudiobusPort(AudioComponentDescription);
+        
 
 #define ABAssert(condition,msg) (_ABAssert((BOOL)(condition),(msg),strrchr(__FILE__, '/')+1,__LINE__))
 

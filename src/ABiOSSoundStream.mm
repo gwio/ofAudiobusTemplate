@@ -11,8 +11,15 @@
 #include "ABiOSSoundStream.h"
 #include "ofxiOSSoundStreamDelegate.h"
 #include "ofBaseApp.h"
+#include "ofSoundStream.h"
+#include "ofLog.h"
+#include <functional>
 
+#import "SoundInputStream.h"
+#import "SoundOutputStream.h"
 #import <AVFoundation/AVFoundation.h>
+
+using namespace std;
 
 //------------------------------------------------------------------------------
 ABiOSSoundStream::ABiOSSoundStream() {
@@ -39,8 +46,8 @@ void ABiOSSoundStream::printDeviceList() const{
     //
 }
 
-std::vector<ofSoundDevice> ABiOSSoundStream::getDeviceList() const{
-    
+vector<ofSoundDevice> ABiOSSoundStream::getDeviceList(ofSoundDevice::Api api) const{
+    ofLogWarning("ofxiOSSoundStream") << "getDeviceList() isn't implemented on iOS";
     return vector<ofSoundDevice>();
     
 }
@@ -56,38 +63,36 @@ int ABiOSSoundStream::getDeviceID()  const{
 }
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::setInput(ofBaseSoundInput * soundInput) {
-    soundInputPtr = soundInput;
+    settings.setInListener(soundInput);
+    [(ofxiOSSoundStreamDelegate *)[(id)soundInputStream delegate] setInput: settings.inCallback];
 }
 
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::setOutput(ofBaseSoundOutput * soundOutput) {
-    soundOutputPtr = soundOutput;
+    settings.setOutListener(soundOutput);
+    [(ofxiOSSoundStreamDelegate *)[(id)soundOutputStream delegate] setOutput: settings.outCallback];
 }
 
 //------------------------------------------------------------------------------
-bool ABiOSSoundStream::setup(int numOfOutChannels, int numOfInChannels, int sampleRate, int bufferSize, int numOfBuffers) {
+bool ABiOSSoundStream::setup(const ofSoundStreamSettings & settings) {
     close();
     
-    this->numOfOutChannels = numOfOutChannels;
-    this->numOfInChannels = numOfInChannels;
-    this->sampleRate = sampleRate;
-    this->bufferSize = bufferSize;
-    this->numOfBuffers = numOfBuffers;
+    this->settings = settings;
     
-    if(numOfInChannels > 0) {
-        soundInputStream = [[SoundInputStream alloc] initWithNumOfChannels:numOfInChannels
-                                                            withSampleRate:sampleRate
-                                                            withBufferSize:bufferSize];
-        ofxiOSSoundStreamDelegate * delegate = [[ofxiOSSoundStreamDelegate alloc] initWithSoundInputApp:soundInputPtr];
+    if(settings.numInputChannels > 0) {
+        soundInputStream = [[SoundInputStream alloc] initWithNumOfChannels:settings.numInputChannels
+                                                            withSampleRate:settings.sampleRate
+                                                            withBufferSize:settings.bufferSize];
+        ofxiOSSoundStreamDelegate * delegate = [[ofxiOSSoundStreamDelegate alloc] initWithSoundInputFn:settings.inCallback];
         ((SoundInputStream *)soundInputStream).delegate = delegate;
         [(SoundInputStream *)soundInputStream start];
     }
     
-    if(numOfOutChannels > 0) {
-        soundOutputStream = [[SoundOutputStream alloc] initWithNumOfChannels:numOfOutChannels
-                                                              withSampleRate:sampleRate
-                                                              withBufferSize:bufferSize];
-        ofxiOSSoundStreamDelegate * delegate = [[ofxiOSSoundStreamDelegate alloc] initWithSoundOutputApp:soundOutputPtr];
+    if(settings.numOutputChannels > 0) {
+        soundOutputStream = [[SoundOutputStream alloc] initWithNumOfChannels:settings.numOutputChannels
+                                                              withSampleRate:settings.sampleRate
+                                                              withBufferSize:settings.bufferSize];
+        ofxiOSSoundStreamDelegate * delegate = [[ofxiOSSoundStreamDelegate alloc] initWithSoundOutputFn:settings.outCallback];
         ((SoundInputStream *)soundOutputStream).delegate = delegate;
         [(SoundInputStream *)soundOutputStream start];
     }
@@ -96,13 +101,6 @@ bool ABiOSSoundStream::setup(int numOfOutChannels, int numOfInChannels, int samp
     return bOk;
 }
 
-//------------------------------------------------------------------------------
-bool ABiOSSoundStream::setup(ofBaseApp * app, int numOfOutChannels, int numOfInChannels, int sampleRate, int bufferSize, int numOfBuffers){
-    setInput(app);
-    setOutput(app);
-    bool bOk = setup(numOfOutChannels, numOfInChannels, sampleRate, bufferSize, numOfBuffers);
-    return bOk;
-}
 
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::start(){
@@ -129,26 +127,22 @@ void ABiOSSoundStream::stop(){
 //------------------------------------------------------------------------------
 void ABiOSSoundStream::close(){
     if(soundInputStream != NULL) {
-        [soundInputStream.delegate release];
-        [soundInputStream setDelegate:nil];
-        [soundInputStream stop];
-        [soundInputStream release];
+        [((SoundInputStream *)soundInputStream).delegate release];
+        [(SoundInputStream *)soundInputStream setDelegate:nil];
+        [(SoundInputStream *)soundInputStream stop];
+        [(SoundInputStream *)soundInputStream release];
         soundInputStream = NULL;
     }
     
     if(soundOutputStream != NULL) {
-        [soundInputStream.delegate release];
-        [soundInputStream setDelegate:nil];
-        [soundOutputStream stop];
-        [soundOutputStream release];
+        [((SoundOutputStream *)soundInputStream).delegate release];
+        [(SoundOutputStream *)soundInputStream setDelegate:nil];
+        [(SoundOutputStream *)soundOutputStream stop];
+        [(SoundOutputStream *)soundOutputStream release];
         soundOutputStream = NULL;
     }
     
-    numOfInChannels = 0;
-    numOfOutChannels = 0;
-    sampleRate = 0;
-    bufferSize = 0;
-    numOfBuffers = 0;
+    settings = ofSoundStreamSettings();
 }
 
 //------------------------------------------------------------------------------
@@ -158,22 +152,22 @@ long unsigned long ABiOSSoundStream::getTickCount() const{
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getNumOutputChannels() const{
-    return numOfOutChannels;
+    return settings.numOutputChannels;
 }
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getNumInputChannels() const{
-    return numOfInChannels;
+    return settings.numInputChannels;
 }
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getSampleRate() const{
-    return sampleRate;
+    return settings.sampleRate;
 }
 
 //------------------------------------------------------------------------------
 int ABiOSSoundStream::getBufferSize() const{
-    return bufferSize;
+    return settings.bufferSize;
 }
 
 
@@ -215,10 +209,11 @@ bool ABiOSSoundStream::setMixWithOtherApps(bool bMix){
 #endif
     
     if(!success) {
-        ofLogError("ABiOSSoundStream") << "setMixWithOtherApps(): couldn't set app audio session category";
+        ofLogError("ofxiOSSoundStream") << "setMixWithOtherApps(): couldn't set app audio session category";
     }
     
     return success;
+    
 }
 
 #endif

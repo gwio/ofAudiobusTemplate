@@ -69,6 +69,9 @@ typedef enum {
     ABTriggerStateAlternate
 } ABTriggerState;
 
+    
+NSString* ABTriggerStateToString(ABTriggerState);
+    
 /*!
  *  Trigger
  *

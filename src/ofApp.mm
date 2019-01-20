@@ -9,8 +9,17 @@ ABiOSSoundStream* ofApp::getSoundStream(){
 //--------------------------------------------------------------
 void ofApp::setupAudioStream(){
     stream = new ABiOSSoundStream();
+    
+    ofSoundStreamSettings settings;
+
+    settings.setOutListener(this);
+    settings.sampleRate = 44100;
+    settings.numOutputChannels = 2;
+    settings.numInputChannels = 1;
+    settings.bufferSize = 512;
+
     //it seems to work better if you also setup an output channel even without using it.
-    stream->setup(this, 2, 1, 44100,512, 0);
+    stream->setup(settings);
 }
 
 //--------------------------------------------------------------

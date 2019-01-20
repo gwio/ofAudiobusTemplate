@@ -10,10 +10,12 @@
 //
 #pragma once
 
-#include "ofBaseSoundStream.h"
+#include "ofSoundStream.h"
+#include "ofSoundBaseTypes.h"
 
 #import "SoundInputStream.h"
 #import "SoundOutputStream.h"
+
 
 // custom iOSSoundSTream that supports AudioBus
 class ABiOSSoundStream : public ofBaseSoundStream {
@@ -22,35 +24,53 @@ public:
     ABiOSSoundStream();
     ~ABiOSSoundStream();
     
-    /// these are not implemented on iOS
-    void printDeviceList() const;
+    //not on iOS
+    std::vector<ofSoundDevice> getDeviceList(ofSoundDevice::Api api) const;
     void setDeviceID(int deviceID);
-    
     void setInput(ofBaseSoundInput * soundInput);
     void setOutput(ofBaseSoundOutput * soundOutput);
     
     
-    std::vector<ofSoundDevice> getDeviceList() const;
-    /// currently, the number of buffers is always 1 on iOS and setting nBuffers has no effect
-    /// the max buffersize is 4096
-    bool setup( int numOfOutChannels, int numOfInChannels, int sampleRate, int bufferSize, int numOfBuffers);
-    bool setup(ofBaseApp * app, int numOfOutChannels, int numOfInChannels, int sampleRate, int bufferSize, int numOfBuffers);
+    bool setup(const ofSoundStreamSettings & settings);
+    
+   
+    
+    
+    void printDeviceList() const;
     
     void start();
     void stop();
     void close();
     
-    // not implemented on iOS, always returns 0
-    long unsigned long getTickCount() const;
     
+    uint64_t getTickCount() const;
     int getNumInputChannels() const;
     int getNumOutputChannels() const;
     int getSampleRate() const;
     int getBufferSize() const;
     int getDeviceID() const;
     
+    ofSoundDevice getInDevice() const{
+        return ofSoundDevice();
+    }
+    
+    ofSoundDevice getOutDevice() const{
+        return ofSoundDevice();
+    }
     
     static bool setMixWithOtherApps(bool bMix);
+    
+    //----------
+    
+    /// these are not implemented on iOS
+
+    
+    
+
+   
+    
+    
+    
     
     SoundInputStream * getSoundInputStream();
     SoundOutputStream * getSoundOutStream();
@@ -68,6 +88,11 @@ private:
     int sampleRate;
     int bufferSize;
     int numOfBuffers;
+    
+    //void * soundInputStream;
+    //void * soundOutputStream;
+    
+    ofSoundStreamSettings settings;
 };
 
 #endif
