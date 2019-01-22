@@ -25,6 +25,8 @@ class ofApp : public ofxiOSApp {
     
     void setupAudioStream();
     
+    void setBpm(int);
+    
     ABiOSSoundStream* stream;
     ABiOSSoundStream* getSoundStream();
     
@@ -33,6 +35,8 @@ class ofApp : public ofxiOSApp {
     float volume;
     
     controlThread myControlThread;
+    
+    int bpm;
 
 };
 

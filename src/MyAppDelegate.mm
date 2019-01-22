@@ -3,6 +3,11 @@
 
 #import "ofApp.h"
 
+#import "ABLLinkSettingsViewController.h"
+
+UIViewController *_linkSettings;
+UINavigationController *navController;
+
 //#include "ofxiOSExtras.h"
 //#include "ofAppiOSWindow.h"
 
@@ -95,6 +100,13 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
         }
     }];
     
+    
+    //link stuff
+    ABLLinkSetSessionTempoCallback(
+                                   stream.getLinkRef, onSessionTempoChanged, (__bridge void *)self);
+    
+    _linkSettings = [ABLLinkSettingsViewController instance:stream.getLinkRef];
+    
     ofxiOSDisableIdleTimer();
 
     
@@ -108,7 +120,10 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
     [ofxiOSGetGLView() stopAnimation];
     glFinish();
     //only continue to generate sound when not connected to anything, maybe this needs a check for inter app audio too, but it works with garageband
-    if (!_audiobusController.connected) {
+    if (!_audiobusController.connected  &&
+        !_audiobusController.memberOfActiveAudiobusSession && 
+        !ABLLinkIsConnected(dynamic_cast<ofApp*>(ofGetAppPtr())->getSoundStream()->getSoundOutStream().getLinkRef)
+        ) {
         [self stop];
     }
 }
@@ -155,6 +170,62 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
     AudioOutputUnitStop(dynamic_cast<ofApp*>(ofGetAppPtr())->getSoundStream()->getSoundOutStream().audioUnit);
     [[AVAudioSession sharedInstance] setActive:NO error:NULL];
 }
+
+static void onSessionTempoChanged(Float64 bpm, void* context) {
+    //   ViewController* vc = (__bridge ViewController *)context;
+    // [vc updateSessionTempo:bpm];
+    NSLog(@"bpm change %f",bpm);
+    
+    if ( dynamic_cast<ofApp*>(ofGetAppPtr()) != NULL){
+        dynamic_cast<ofApp*>(ofGetAppPtr())->setBpm(bpm);
+    }
+}
+
+- (void)showLinkSettings{
+    
+    if(navController.view.hidden){
+        navController.view.hidden = NO;
+    } else {
+        navController = [[UINavigationController alloc] initWithRootViewController:_linkSettings];
+        
+        
+        _linkSettings.navigationItem.rightBarButtonItem =
+        [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                      target:self
+                                                      action:@selector(hideLinkSettings:)];
+        
+        navController.modalPresentationStyle = UIModalPresentationPopover;
+        
+        
+        
+        UIPopoverPresentationController *popC = _linkSettings.popoverPresentationController;
+        popC.permittedArrowDirections = UIPopoverArrowDirectionAny;
+        popC.sourceRect = [ofxiOSGetGLParentView() frame];
+        
+        
+        // we recommend using a size of 320x400 for the display in a popover
+        _linkSettings.preferredContentSize = CGSizeMake(320., 400.);
+        
+        //
+        
+        // UIButton *button = (UIButton *)sender;
+        // popC.sourceView = button.superview;
+        
+        popC.backgroundColor = [UIColor whiteColor];
+        _linkSettings.view.backgroundColor = [UIColor whiteColor];
+        [ofxiOSGetGLParentView() addSubview:navController.view];
+        
+    }
+    
+    
+    
+}
+
+- (void)hideLinkSettings:(id)sender {
+#pragma unused(sender)
+    navController.view.hidden = YES;
+}
+
 
 @end
 

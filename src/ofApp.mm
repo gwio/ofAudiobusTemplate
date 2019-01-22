@@ -23,11 +23,15 @@ void ofApp::setupAudioStream(){
 }
 
 //--------------------------------------------------------------
-void ofApp::setup(){	
-
+void ofApp::setup(){
     volume = 0.0;
     
-    myControlThread.setup(&volume);
+    bpm = 0;
+    
+    myControlThread.setup(&volume, this);
+    
+    
+    ofSetBackgroundColor(ofColor::yellowGreen);
 }
 
 //--------------------------------------------------------------
@@ -37,7 +41,11 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	
+    ofSetColor(0, 0, 0);
+    ofDrawBitmapString(ofToString(bpm), 100, 100);
+    
+    ofSetColor(ofColor::blue);
+    ofDrawRectangle(0, ofGetWidth()/2, ofGetHeight(), ofGetWidth());
 }
 
 //--------------------------------------------------------------
@@ -48,7 +56,13 @@ void ofApp::exit(){
 
 //--------------------------------------------------------------
 void ofApp::touchDown(ofTouchEventArgs & touch){
-
+    cout << touch.x << endl;
+    if ((ofGetWidth()) - touch.x > ofGetWidth()/2 ) {
+         myControlThread.showLinkMenu();
+    } else {
+        int bbb = ofMap(touch.y, 0, ofGetHeight(), 100,200);
+        [getSoundStream()->getSoundOutStream() setBpm: bbb];
+    }
 }
 
 //--------------------------------------------------------------
@@ -63,7 +77,8 @@ void ofApp::touchUp(ofTouchEventArgs & touch){
 
 //--------------------------------------------------------------
 void ofApp::touchDoubleTap(ofTouchEventArgs & touch){
-
+    
+  
 }
 
 //--------------------------------------------------------------
@@ -101,4 +116,11 @@ void ofApp::audioOut(ofSoundBuffer & buffer){
         buffer[i+1] = sample;
     }
     
+}
+
+//-----------
+
+void ofApp::setBpm(int _bpm){
+    
+    bpm = _bpm;
 }

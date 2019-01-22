@@ -15,6 +15,7 @@
 		5E03CFB192305DAE3F256A27 /* controlThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EE4E1D9841353B03C32CEF38 /* controlThread.cpp */; };
 		67DFA53619F92A69003B3434 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 67DFA53419F92A5E003B3434 /* Accelerate.framework */; };
 		8362D4A421F164C10083F715 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8362D4A321F164C00083F715 /* CoreMIDI.framework */; };
+		8362D4C721F780BC0083F715 /* libABLLink.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8362D4C621F780BC0083F715 /* libABLLink.a */; };
 		83862A2321F1600F00489D90 /* libAudiobus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 83862A1C21F1600E00489D90 /* libAudiobus.a */; };
 		83862A2521F1602400489D90 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 83862A2421F1602400489D90 /* Security.framework */; };
 		83862A2721F161F200489D90 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 83862A2621F161F200489D90 /* libz.tbd */; };
@@ -67,6 +68,11 @@
 		712A32DAE694D9B6214413AE /* controlThread.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = controlThread.h; path = src/controlThread.h; sourceTree = SOURCE_ROOT; };
 		8362D4A321F164C00083F715 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		8362D4A521F165160083F715 /* ofAudiobusTemplate.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ofAudiobusTemplate.entitlements; sourceTree = "<group>"; };
+		8362D4C621F780BC0083F715 /* libABLLink.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libABLLink.a; path = ../../../LinkKit/lib/libABLLink.a; sourceTree = "<group>"; };
+		8362D4CB21F782BD0083F715 /* ABLLink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABLLink.h; sourceTree = "<group>"; };
+		8362D4CC21F782BD0083F715 /* ABLLinkSettingsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABLLinkSettingsViewController.h; sourceTree = "<group>"; };
+		8362D4CD21F782BD0083F715 /* ABLLinkUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABLLinkUtils.h; sourceTree = "<group>"; };
+		8362D4CF21F783AD0083F715 /* libABLLink.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libABLLink.a; path = ../lib/libABLLink.a; sourceTree = "<group>"; };
 		83862A0E21F1600E00489D90 /* ABMIDIReceiverPort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABMIDIReceiverPort.h; sourceTree = "<group>"; };
 		83862A0F21F1600E00489D90 /* ABMIDIPort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABMIDIPort.h; sourceTree = "<group>"; };
 		83862A1021F1600E00489D90 /* ABPort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABPort.h; sourceTree = "<group>"; };
@@ -119,6 +125,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8362D4C721F780BC0083F715 /* libABLLink.a in Frameworks */,
 				8362D4A421F164C10083F715 /* CoreMIDI.framework in Frameworks */,
 				83862A2721F161F200489D90 /* libz.tbd in Frameworks */,
 				BBE5EAB80F49AD8400F28951 /* AudioToolbox.framework in Frameworks */,
@@ -198,6 +205,18 @@
 			name = local_addons;
 			sourceTree = "<group>";
 		};
+		8362D4C221F780890083F715 /* link */ = {
+			isa = PBXGroup;
+			children = (
+				8362D4CB21F782BD0083F715 /* ABLLink.h */,
+				8362D4CC21F782BD0083F715 /* ABLLinkSettingsViewController.h */,
+				8362D4CD21F782BD0083F715 /* ABLLinkUtils.h */,
+				8362D4CF21F783AD0083F715 /* libABLLink.a */,
+			);
+			name = link;
+			path = ../../../../LinkKit/link;
+			sourceTree = "<group>";
+		};
 		83862A0D21F1600E00489D90 /* Audiobus */ = {
 			isa = PBXGroup;
 			children = (
@@ -229,6 +248,7 @@
 		901808C02053638E004A7774 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8362D4C621F780BC0083F715 /* libABLLink.a */,
 				8362D4A321F164C00083F715 /* CoreMIDI.framework */,
 				83862A2621F161F200489D90 /* libz.tbd */,
 				83862A2421F1602400489D90 /* Security.framework */,
@@ -292,6 +312,7 @@
 		E4D8936A11527B74007E1F53 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				8362D4C221F780890083F715 /* link */,
 				83862A0D21F1600E00489D90 /* Audiobus */,
 				E4D8936B11527B74007E1F53 /* main.mm */,
 				E4D8936D11527B74007E1F53 /* ofApp.mm */,
@@ -451,12 +472,18 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ofxiOS_Prefix.pch;
 				"GCC_WARN_64_TO_32_BIT_CONVERSION[arch=*64]" = NO;
-				HEADER_SEARCH_PATHS = "$(OF_CORE_HEADERS)";
+				HEADER_SEARCH_PATHS = (
+					"$(OF_CORE_HEADERS)",
+					/Users/chris/of/of_v0.10.1_ios_release/LinkKit/link,
+					"/Users/chris/of/of_v0.10.1_ios_release/LinkKit/lib/**",
+				);
 				INFOPLIST_FILE = "ofxiOS-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/src/Audiobus",
+					/Users/chris/of/of_v0.10.1_ios_release/LinkKit/lib,
+					"/Users/chris/of/of_v0.10.1_ios_release/LinkKit/link/**",
 				);
 				PRODUCT_NAME = "${TARGET_NAME}";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -478,12 +505,18 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ofxiOS_Prefix.pch;
 				"GCC_WARN_64_TO_32_BIT_CONVERSION[arch=*64]" = NO;
-				HEADER_SEARCH_PATHS = "$(OF_CORE_HEADERS)";
+				HEADER_SEARCH_PATHS = (
+					"$(OF_CORE_HEADERS)",
+					/Users/chris/of/of_v0.10.1_ios_release/LinkKit/link,
+					"/Users/chris/of/of_v0.10.1_ios_release/LinkKit/lib/**",
+				);
 				INFOPLIST_FILE = "ofxiOS-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/src/Audiobus",
+					/Users/chris/of/of_v0.10.1_ios_release/LinkKit/lib,
+					"/Users/chris/of/of_v0.10.1_ios_release/LinkKit/link/**",
 				);
 				PRODUCT_NAME = "${TARGET_NAME}";
 				TARGETED_DEVICE_FAMILY = "1,2";
