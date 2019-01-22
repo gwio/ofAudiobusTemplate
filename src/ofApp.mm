@@ -15,7 +15,7 @@ void ofApp::setupAudioStream(){
     settings.setOutListener(this);
     settings.sampleRate = 44100;
     settings.numOutputChannels = 2;
-    settings.numInputChannels = 1;
+    settings.numInputChannels = 0;
     settings.bufferSize = 512;
 
     //it seems to work better if you also setup an output channel even without using it.

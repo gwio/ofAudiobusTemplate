@@ -9,10 +9,13 @@
 /* You might need to get a temporary key for this app from https://developer.audiob.us/ and maybe
 change the AudioComponents Names in the plist to test this on a device */
 
-static NSString *const AUDIOBUS_API_KEY= @"H4sIAAAAAAAAA22OPW/CMBCG/8vNBDcqBZEtGVhZumEUOclBLRLbujujWoj/joMydOhwy/N+3QPwN1hKUEH5tdnnK7c7WEEX3TBi68yEWfKXOg7Wd5G/cQqjEcyWSGPL/Q++Hb2f1sdDUTeFLI61WSKVVlplf/AkDNXpAZLCnDGRrpkvG8dDWzftn/4BuScbxHr3n8yxW3o4OclgMi5eTC+RkDIV5JnekfjdUD7PK7BDVrSaf/RkKBWEV8tCZl7R6oZJq8+PzR6eL/QntikZAQAA:G0ehqg7G3Fn+GHFzkpuYBL/FClylMvCvMqWwChBHvRsTsqpl8ehU1w1JMGFzJtxIC8oI1dv4tTRGQ1RBfFEMy2lPECs8qq8BzBxEjryUVE/W5W73GuxUgLCvEDfuFunL";
+static NSString *const AUDIOBUS_API_KEY= @"H4sIAAAAAAAAA32NwQ6CMBBE/2XPaiVgVG7+gzdrSIFVG6FtdrfGhvjvFuNVr29m3kyAz2ApQQ3FptqX22q/q2ABbXT9gI0zI+bIXw6xt76NfMQxDEYwVyINDXc3/NFYFqv1ynxhrZVWeRM8CUN9mkBSmHcm0jXzfz89ckc2iPXuV4Vj+/VxcpLBaFy8mE4iIWUqyDN9IPHHUrzOC7B9TrSSrPFkKC0Jr5aFzPyk1R2TVuV6U8HrDWhCcQElAQAA:kZ2p9Y4IxocAUVhRzfEWeFLQhkVQKMUiw+LhPIuiwo1rup2Q9iyZQP4k2V0aVo0nSnku+klcbYYLwHoln0Fzj/qBhEPUqYgBlUhqw5qux2wE24Y2whn2CJRO3HU0yzwf";
 
 
 @implementation MyAppDelegate
+
+static void * kAudiobusConnectedChanged = &kAudiobusConnectedChanged;
+
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     
@@ -51,6 +54,9 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
     }
     */
     
+    // Watch the connected and audiobusAppRunning properties to be notified when we connect/disconnect or Audiobus opens or closes
+    [_audiobusController addObserver:self forKeyPath:@"connected" options:0 context:kAudiobusConnectedChanged];
+    
     self.audiobusController = [[ABAudiobusController alloc] initWithApiKey:AUDIOBUS_API_KEY];
     self.audiobusController.connectionPanelPosition = ABConnectionPanelPositionTop;
     
@@ -62,13 +68,15 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
 
     SoundOutputStream *stream = app->getSoundStream()->getSoundOutStream();
     
+    
+    
     /* You need to set the AudioSession settings again, setupSoundStream() I think sets it to AVAudioSessionCategoryPlayAndRecord?
      In any case, without calling this after setupSoundStream i could not start from within Audiobus without sound issues. */
     
     [[AVAudioSession sharedInstance] setCategory: AVAudioSessionCategoryPlayback withOptions: AVAudioSessionCategoryOptionMixWithOthers  error:  NULL];
     
     
-    self.audiobusSender = [[ABAudioSenderPort alloc] initWithName:@"Audio "
+    self.audiobusSender = [[ABAudioSenderPort alloc] initWithName:@"ofAudiobusTemplate"
                                                        title:NSLocalizedString(@"Out", @"")
                                    audioComponentDescription:(AudioComponentDescription) {
                                        .componentType = kAudioUnitType_RemoteGenerator,
@@ -78,6 +86,17 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
                                                    audioUnit:stream.audioUnit];
     [_audiobusController addAudioSenderPort:_audiobusSender];
     
+    [[NSNotificationCenter defaultCenter] addObserverForName:AVAudioSessionInterruptionNotification object:nil queue:nil usingBlock:^(NSNotification *notification) {
+        NSInteger type = [notification.userInfo[AVAudioSessionInterruptionTypeKey] integerValue];
+        if ( type == AVAudioSessionInterruptionTypeBegan ) {
+            [self stop];
+        } else {
+            [self start];
+        }
+    }];
+    
+    ofxiOSDisableIdleTimer();
+
     
     return YES;
     
@@ -90,18 +109,13 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
     glFinish();
     //only continue to generate sound when not connected to anything, maybe this needs a check for inter app audio too, but it works with garageband
     if (!_audiobusController.connected) {
-        AudioOutputUnitStop(dynamic_cast<ofApp*>(ofGetAppPtr())->getSoundStream()->getSoundOutStream().audioUnit);
-        [[AVAudioSession sharedInstance] setActive:NO error:NULL];
+        [self stop];
     }
 }
 
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
-
-    [[AVAudioSession sharedInstance] setActive:YES error:NULL];
-    AudioOutputUnitStart(_audiobusSender.audioUnit);
-    [[AVAudioSession sharedInstance] setCategory: AVAudioSessionCategoryPlayback withOptions: AVAudioSessionCategoryOptionMixWithOthers error:  NULL];
-    
+    [self start];
 }
 
 //check for iia connection, i had a problem with fbos not working when started from inside garageband...
@@ -131,6 +145,16 @@ self.uiViewController = [[ofxiOSViewController alloc] initWithFrame:[[UIScreen m
     [super applicationWillTerminate:application];
 }
 
+-(void)start{
+    [[AVAudioSession sharedInstance] setActive:YES error:NULL];
+    AudioOutputUnitStart(dynamic_cast<ofApp*>(ofGetAppPtr())->getSoundStream()->getSoundOutStream().audioUnit);
+    [[AVAudioSession sharedInstance] setCategory: AVAudioSessionCategoryPlayback withOptions: AVAudioSessionCategoryOptionMixWithOthers error:  NULL];
+}
+
+-(void)stop{
+    AudioOutputUnitStop(dynamic_cast<ofApp*>(ofGetAppPtr())->getSoundStream()->getSoundOutStream().audioUnit);
+    [[AVAudioSession sharedInstance] setActive:NO error:NULL];
+}
 
 @end
 

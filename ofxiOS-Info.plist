@@ -41,10 +41,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.ofAB_template.sender</string>
+			<string>com.test.ofAudiobusTemplate</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>OF_AB_template.audiobus</string>
+				<string>ofAudiobusTemplate-1.0.audiobus</string>
 			</array>
 		</dict>
 	</array>
